@@ -35,6 +35,7 @@ RUN apt-get update \
     && chown -R bot:bot /app/backend/data /app/backend/outbox /opt/playwright
 
 COPY --chmod=755 bots/entrypoint.sh /usr/local/bin/kenes-bot-entrypoint
+RUN mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix
 USER bot
 ENTRYPOINT ["kenes-bot-entrypoint"]
 CMD ["uv", "run", "--no-sync", "celery", "-A", "app.tasks.celery_app:celery_app", "worker", "-Q", "bots", "--concurrency=1", "--prefetch-multiplier=1", "--loglevel=info"]

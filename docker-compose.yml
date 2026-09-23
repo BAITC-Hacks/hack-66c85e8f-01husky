@@ -90,6 +90,8 @@ services:
     env_file: .env
     init: true
     shm_size: 1gb
+    security_opt:
+      - seccomp=./bots/runtime/seccomp_profile.json
     stop_grace_period: 60s
     environment:
       BOT_AUDIO_DEVICE: pulse:kenes.monitor

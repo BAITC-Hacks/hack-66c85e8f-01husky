@@ -52,6 +52,7 @@ class MeetBot(BrowserBot):
         return None
 
     def admission_step(self) -> None:
+        self.prejoin_step()  # Media permission confirmation can appear after Join.
         dialog = self.recording_dialog()
         if dialog is not None:
             buttons = dialog.get_by_role(

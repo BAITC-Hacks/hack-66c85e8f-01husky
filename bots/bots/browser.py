@@ -90,7 +90,7 @@ class BrowserBot(MeetingBot):
         re.IGNORECASE,
     )
     denied_pattern = re.compile(
-        r"(?:request to join (?:was )?(?:denied|declined)|can.t join this (?:video call|call|meeting)|"
+        r"(?:request to join (?:was )?(?:denied|declined)|"
         r"not (?:allowed|permitted) to join|declined your request|"
         r"denied your request|denied access to the meeting|meeting (?:is )?locked|"
         r"запрос отклонен|запрос отклонён|не разрешил|не можете присоединиться)",
@@ -125,6 +125,14 @@ class BrowserBot(MeetingBot):
             permissions=["microphone", "camera"],
             args=[
                 "--autoplay-policy=no-user-gesture-required",
+                # Live Meet rejected ResolveMeetingSpace before the name form in
+                # Chrome's automation mode. This only restores prejoin access;
+                # meeting admission still depends on the provider and host.
+                *(
+                    ["--disable-blink-features=AutomationControlled"]
+                    if self.cfg.platform == "meet"
+                    else []
+                ),
                 "--use-fake-device-for-media-stream",
                 f"--use-file-for-fake-video-capture={camera}",
                 f"--use-file-for-fake-audio-capture={microphone}",
@@ -215,10 +223,12 @@ class BrowserBot(MeetingBot):
             raise BotError("Meeting requires CAPTCHA; manual participation is required")
         # Read locally for matching only. Never persist screenshots, text, URLs or cookies.
         body = self.page.locator("body").inner_text(timeout=5000)
-        if self.denied_pattern.search(body):
-            raise BotError("Organizer denied guest access or locked the meeting")
         if self.auth_pattern.search(body):
             raise BotError("Meeting requires sign-in; guest access is unavailable")
+        if self.denied_pattern.search(body):
+            raise BotError("Organizer denied guest access or locked the meeting")
+        if re.search(r"can.t join this (?:video call|call|meeting)", body, re.IGNORECASE):
+            raise BotError("Meeting provider refused access; the reason was not disclosed")
         if re.search(
             r"(?:verify (?:that )?you are human|verify you.re not a robot|verify you.re a real person|"
             r"review the security of your connection|performing security verification)",

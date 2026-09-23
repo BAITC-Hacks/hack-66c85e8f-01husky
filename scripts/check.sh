@@ -3,6 +3,10 @@
 #
 #   ./scripts/check.sh            lint + unit tests + HTTP smoke (needs PostgreSQL, ffmpeg, soffice)
 #   ./scripts/check.sh --compose  additionally builds and exercises the full docker compose stack
+#   ./scripts/check.sh --compose-only   only the docker compose stack (no host PostgreSQL needed)
+#
+# Host ports busy (local PostgreSQL on 5432)? Put a docker-compose.override.yml next to
+# docker-compose.yml with other host ports; it is gitignored and picked up automatically.
 #
 # Exit code 0 = green. Every failing step is printed at the end.
 set -uo pipefail
@@ -20,13 +24,16 @@ need uv "https://docs.astral.sh/uv/" || exit 1
 need ffmpeg "brew install ffmpeg" || exit 1
 need soffice "brew install --cask libreoffice (needed for PDF export tests)" || echo "PDF tests will be skipped"
 
+mode="${1:-}"
+if [[ "$mode" != "--compose-only" ]]; then
 step "backend ruff"        bash -c "cd backend && uv run ruff check . && uv run ruff format --check ."
 step "backend pytest"      bash -c "cd backend && uv run pytest -q"
 step "pipeline pytest"     bash -c "cd pipeline && uv run ruff check . && uv run pytest -q"
 step "bots pytest"         bash -c "cd bots && uv run ruff check . && uv run pytest -q"
 step "backend http smoke"  bash -c "cd backend && uv run python scripts/smoke_backend.py"
+fi
 
-if [[ "${1:-}" == "--compose" ]]; then
+if [[ "$mode" == "--compose" || "$mode" == "--compose-only" ]]; then
   need docker "Docker Desktop" || exit 1
   [[ -f .env ]] || cp .env.example .env
   step "compose config" docker compose config --quiet

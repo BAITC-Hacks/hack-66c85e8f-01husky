@@ -230,3 +230,39 @@ NATIVE_PROBE = r"""async ({width, height}) => {
     await context.close();
   }
 }"""
+
+
+@pytest.mark.parametrize(
+    ("platform", "url", "webdriver"),
+    [
+        ("meet", "https://meet.google.com/abc-defg-hij", False),
+        ("teams", "https://teams.live.com/meet/1234567890123", True),
+        ("zoom", "https://zoom.us/j/123456789", True),
+    ],
+)
+def test_meet_prejoin_browser_mode(tmp_path, monkeypatch, platform, url, webdriver):
+    """Characterize the launch setting behind live Meet ResolveMeetingSpace 403.
+
+    This probes the real browser property, not live provider admission; Teams and
+    Zoom retain their existing launch mode.
+    """
+    channel = os.getenv("KENES_TEST_BROWSER_CHANNEL")
+    if channel:
+        original = BrowserType.launch_persistent_context
+
+        def launch(self, *args, **kwargs):
+            return original(self, *args, **kwargs, channel=channel)
+
+        monkeypatch.setattr(BrowserType, "launch_persistent_context", launch)
+
+    class FixtureBot(BrowserBot):
+        def _route(self, route):
+            route.fulfill(content_type="text/html", body="<!doctype html><body>Prejoin</body>")
+
+    bot = FixtureBot(BotConfig(platform, url, 1, "", ""))
+    bot.work_dir = tmp_path
+    try:
+        bot.open_browser()
+        assert bot.page.evaluate("navigator.webdriver") is webdriver
+    finally:
+        bot.leave()
