@@ -29,7 +29,7 @@ Next.js 15 App Router · React 19 · TS strict · Tailwind v4 · shadcn/ui (Radi
 messages/{ru,kk}.json      all UI strings; both files must have the same keys
 mocks/                     seed.ts (fixtures), db.ts (stateful mock db + fake pipeline), handlers.ts (every §7 endpoint),
                            transport.ts (mockFetch + MockLiveSocket), pdf.ts
-src/app/(auth)/            /login, /register (split layout, ink hero panel)
+src/app/(auth)/            /login, /register (split layout, indigo `.bg-hero` panel)
 src/app/(app)/             authed area; layout = AuthGuard + AppHeader + footer
   meetings/, meetings/new, meetings/[id], tasks/, participants/, admin/directions/
 src/i18n/                  locale from NEXT_LOCALE cookie (no URL prefix; routes match spec §8 exactly)
@@ -39,7 +39,7 @@ src/lib/api/queries/*.ts   ALL data access goes through these hooks (query keys 
 src/lib/audio/             useRecorder: MediaRecorder + AnalyserNode level meter
 src/lib/format.ts          timecodes, dates, deadline tone, speaker colors (+ format.test.ts)
 src/components/ui/         shadcn-generated. Add with `pnpm dlx shadcn@latest add <name>`; don't restyle here
-src/components/brand/      wordmark, seal stamp, ornament (qoshqar-muiz), privacy badge
+src/components/brand/      wordmark/logo mark, seal stamp, privacy badge
 src/components/{common,meeting,meetings,new-meeting,participants,tasks,notifications,shell}/
 ```
 
@@ -54,13 +54,14 @@ src/components/{common,meeting,meetings,new-meeting,participants,tasks,notificat
 - **Live recording:** `openLiveSocket()` goes straight to `NEXT_PUBLIC_WS_URL`, because Next rewrites don't proxy WebSockets. Binary chunks go every 1 s, then `{"event":"stop"}`.
 - **Privacy (spec §2):** no external runtime requests. Fonts come through `next/font` (self-hosted at build). No analytics, no CDNs.
 
-## Design system: "digital chancellery × steppe"
+## Design system: Loom-inspired
 
-The product is an official register of minutes. It should read as paper and ink, not generic SaaS.
-- Tokens live in `src/app/globals.css` (`--paper --ink --steppe --gold --brick --sage --rec --speaker-0..5`). Use the Tailwind names (`bg-gold-soft`, `text-brick`, `bg-speaker-2`). **Never hardcode colors.** Add a token instead, for both light and `.dark`.
-- Type: `font-heading` = Literata (titles, big numbers, task text), `font-sans` = Onest (UI), `font-mono` = JetBrains Mono (timecodes, `SPEAKER_00`, `№`, `SED-…`, eyebrows). All three have cyrillic-ext for the Kazakh letters.
-- Motifs: hairline borders, small radii, mono uppercase eyebrows with wide tracking, the gold horn ornament used sparingly, the `SealStamp` for confirmed protocols, and `.marker-highlight` for evidence quotes.
-- Status colors: steppe = assigned/processing, gold = draft/in progress/due soon, sage = done/confirmed/voiceprint, brick = overdue/failed/unmatched.
+The look follows Loom's visual language (ref: the "Loom UI – Free UI Kit (Recreated)" Figma community file): an airy lavender-grey canvas, white cards with soft shadows, a "blurple" brand, and deep indigo hero surfaces.
+- Tokens live in `src/app/globals.css`: `--paper` (canvas #F7F7FB), `--ink` (#1B1A3A), `--night` (hero indigo), `--brand` (#625DF5), `--brand-soft` (lavender tint), `--sun` (due soon/draft), `--coral` (overdue/failed), `--mint` (done/voiceprint), `--rec`, and `--speaker-0..5`. Use the Tailwind names (`bg-brand-soft`, `text-coral`, `bg-speaker-2`). **Never hardcode colors.** Add a token instead, for both light and `.dark`.
+- Surfaces: cards are `rounded-xl border bg-card shadow-soft`; hover lift uses `shadow-lift`. Nav items and segmented filters are pills (`rounded-full`), with the active one on `bg-brand-soft` or `bg-primary`.
+- Type: Onest for everything (`font-heading` = Onest bold, tight tracking). JetBrains Mono only for timecodes, `SPEAKER_00`, `№`, and `SED-…`. Eyebrows are `text-xs font-semibold tracking-wide text-primary uppercase`.
+- Utilities: `.bg-hero` (indigo→blurple gradient with glows), `.text-gradient`, and `.marker-highlight` (evidence quotes). `SealStamp` still marks confirmed protocols.
+- Status colors: brand = assigned/processing, sun = draft/in progress/due soon, mint = done/confirmed/voiceprint, coral = overdue/failed/unmatched.
 - Check each screen at 375 px (no horizontal scroll) and in dark mode.
 
 ## Git

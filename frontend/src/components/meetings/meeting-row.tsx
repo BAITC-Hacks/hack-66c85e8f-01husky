@@ -21,11 +21,11 @@ export function MeetingRow({ m, index }: { m: MeetingListItem; index: number }) 
     <li className="animate-rise" style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}>
       <Link
         href={`/meetings/${m.id}`}
-        className="group relative grid grid-cols-[3.5rem_1fr_auto] items-center gap-4 overflow-hidden rounded-lg border bg-card px-4 py-4 transition-all hover:-translate-y-px hover:border-primary/40 hover:shadow-[0_6px_24px_-12px_color-mix(in_oklch,var(--ink)_35%,transparent)] sm:grid-cols-[4.5rem_1fr_auto_auto] sm:px-5"
+        className="group relative grid grid-cols-[3.5rem_1fr_auto] items-center gap-4 overflow-hidden rounded-xl border bg-card shadow-soft px-4 py-4 transition-all hover:-translate-y-px hover:border-primary/40 hover:shadow-lift sm:grid-cols-[4.5rem_1fr_auto_auto] sm:px-5"
       >
         {/* date block, like a register column */}
         <div className="flex flex-col items-center border-r pr-4 text-center">
-          <span className="font-heading text-3xl leading-none font-semibold tabular">{formatDate(m.meeting_date, locale, "dd")}</span>
+          <span className="font-heading text-3xl leading-none font-bold text-primary tabular">{formatDate(m.meeting_date, locale, "dd")}</span>
           <span className="mt-1 font-mono text-[10px] tracking-wider text-muted-foreground uppercase">
             {formatDate(m.meeting_date, locale, "MMM yy")}
           </span>

@@ -11,7 +11,7 @@ export function PrivacyBadge({ modelInfo, className }: { modelInfo?: Record<stri
   const badge = (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border border-sage/40 bg-sage/10 px-2.5 py-1 text-xs font-medium text-sage",
+        "inline-flex items-center gap-1.5 rounded-full border border-mint/40 bg-mint/10 px-2.5 py-1 text-xs font-medium text-mint",
         className,
       )}
     >

@@ -59,7 +59,7 @@ export function ParticipantPicker({
                           {p.position ?? (p.user_id ? tp("account") : tp("guest"))}
                         </span>
                       </span>
-                      {p.has_voiceprint && <AudioWaveform className="size-3.5 text-sage" aria-label={tp("hasVoiceprint")} />}
+                      {p.has_voiceprint && <AudioWaveform className="size-3.5 text-mint" aria-label={tp("hasVoiceprint")} />}
                       <Check className={cn("size-4", value.includes(p.id) ? "opacity-100" : "opacity-0")} />
                     </CommandItem>
                   ))}
@@ -87,7 +87,7 @@ export function ParticipantPicker({
             >
               <ParticipantAvatar name={p.name} size="sm" />
               {p.name}
-              {p.has_voiceprint && <AudioWaveform className="size-3 text-sage" />}
+              {p.has_voiceprint && <AudioWaveform className="size-3 text-mint" />}
               <button
                 type="button"
                 onClick={() => toggle(p.id)}

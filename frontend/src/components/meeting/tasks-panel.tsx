@@ -58,7 +58,7 @@ export function TasksPanel({
         ))}
       </ol>
       {!readOnly && (
-        <form onSubmit={add} className="flex gap-2 rounded-lg border border-dashed p-2">
+        <form onSubmit={add} className="flex gap-2 rounded-xl border border-dashed p-2">
           <Input
             value={text}
             onChange={(e) => setText(e.target.value)}

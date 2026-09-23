@@ -35,9 +35,9 @@ export function SpeakerRibbon({
   const ticks = [0, 0.25, 0.5, 0.75, 1];
 
   return (
-    <section className="rounded-lg border bg-card p-4 sm:p-5">
+    <section className="rounded-xl border bg-card shadow-soft p-4 sm:p-5">
       <div className="mb-3 flex items-baseline justify-between">
-        <h3 className="font-mono text-[11px] tracking-[0.18em] text-muted-foreground uppercase">{t("timeline")}</h3>
+        <h3 className="text-xs font-semibold tracking-wide text-primary uppercase">{t("timeline")}</h3>
         <span className="font-mono text-[11px] text-muted-foreground">{formatTimecode(total)}</span>
       </div>
       <div className="grid gap-1.5">

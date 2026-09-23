@@ -32,7 +32,7 @@ export default function ParticipantsPage() {
         title={t("title")}
         subtitle={
           <span className="inline-flex items-center gap-1.5">
-            <AudioWaveform className="size-4 text-sage" />
+            <AudioWaveform className="size-4 text-mint" />
             {withPrint} / {data.length} · {t("hasVoiceprint")}
           </span>
         }
@@ -63,7 +63,7 @@ export default function ParticipantsPage() {
             <li key={p.id}>
               <button
                 onClick={() => setOpenId(p.id)}
-                className="group flex w-full items-center gap-3 rounded-lg border bg-card p-4 text-left transition-all hover:-translate-y-px hover:border-primary/40"
+                className="group flex w-full items-center gap-3 rounded-xl border bg-card shadow-soft p-4 text-left transition-all hover:-translate-y-px hover:border-primary/40"
               >
                 <ParticipantAvatar name={p.name} className="size-11 text-sm" />
                 <span className="min-w-0 flex-1">
@@ -73,7 +73,7 @@ export default function ParticipantsPage() {
                     <span
                       className={cn(
                         "inline-flex items-center gap-1 rounded-full border px-1.5 py-px text-[11px]",
-                        p.has_voiceprint ? "border-sage/40 bg-sage/10 text-sage" : "border-dashed text-muted-foreground",
+                        p.has_voiceprint ? "border-mint/40 bg-mint/10 text-mint" : "border-dashed text-muted-foreground",
                       )}
                     >
                       <AudioWaveform className="size-3" />

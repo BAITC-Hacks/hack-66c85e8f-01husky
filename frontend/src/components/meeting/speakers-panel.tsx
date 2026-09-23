@@ -17,10 +17,10 @@ const SOURCE_ICON: Record<SpeakerSource, typeof Bot> = {
   none: HelpCircle,
 };
 const SOURCE_TONE: Record<SpeakerSource, string> = {
-  voiceprint: "text-sage bg-sage/10 border-sage/30",
+  voiceprint: "text-mint bg-mint/10 border-mint/30",
   llm: "text-primary bg-primary/10 border-primary/30",
   manual: "text-foreground bg-muted border-border",
-  none: "text-brick bg-brick/10 border-brick/30",
+  none: "text-coral bg-coral/10 border-coral/30",
 };
 
 const NONE = "__none";
@@ -62,7 +62,7 @@ export function SpeakersPanel({
         const Icon = SOURCE_ICON[r.source];
         const st = stats(r.speaker);
         return (
-          <li key={r.speaker} className={cn("rounded-lg border bg-card p-4", r.source === "none" && "border-brick/40 border-dashed")}>
+          <li key={r.speaker} className={cn("rounded-xl border bg-card shadow-soft p-4", r.source === "none" && "border-coral/40 border-dashed")}>
             <div className="flex items-center gap-3">
               <span
                 className="flex size-9 shrink-0 items-center justify-center rounded-full font-mono text-[11px] font-semibold text-white"
@@ -105,7 +105,7 @@ export function SpeakersPanel({
                     {meetingParticipants.map((p) => (
                       <SelectItem key={p.id} value={String(p.id)}>
                         {p.name}
-                        {p.has_voiceprint && <AudioWaveform className="size-3 text-sage" />}
+                        {p.has_voiceprint && <AudioWaveform className="size-3 text-mint" />}
                       </SelectItem>
                     ))}
                   </SelectGroup>

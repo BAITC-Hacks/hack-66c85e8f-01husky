@@ -2,7 +2,7 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
-import { HornMotif } from "@/components/brand/ornament";
+import { Sparkles } from "lucide-react";
 import type { TaskStatus } from "@/lib/api/types";
 import { deadlineInfo, formatDate, initials, LOW_CONFIDENCE, speakerColor } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -19,12 +19,12 @@ export function PageHeader({
   eyebrow?: ReactNode;
 }) {
   return (
-    <div className="mb-8 flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mb-8 flex flex-col gap-4 pb-2 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
         {eyebrow && (
-          <div className="mb-2 font-mono text-[11px] tracking-[0.18em] text-muted-foreground uppercase">{eyebrow}</div>
+          <div className="mb-2 text-xs font-semibold tracking-wide text-primary uppercase">{eyebrow}</div>
         )}
-        <h1 className="font-heading text-3xl font-semibold text-balance sm:text-4xl">{title}</h1>
+        <h1 className="font-heading text-3xl font-bold text-balance sm:text-4xl">{title}</h1>
         {subtitle && <p className="mt-1.5 text-muted-foreground">{subtitle}</p>}
       </div>
       {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
@@ -34,8 +34,10 @@ export function PageHeader({
 
 export function EmptyState({ title, hint, action }: { title: string; hint?: string; action?: ReactNode }) {
   return (
-    <div className="flex flex-col items-center rounded-lg border border-dashed border-border px-6 py-16 text-center">
-      <HornMotif className="mb-4 h-8 w-16 text-gold" />
+    <div className="flex flex-col items-center rounded-2xl border border-dashed border-border bg-card/60 px-6 py-16 text-center">
+      <span className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-brand-soft text-primary">
+        <Sparkles className="size-5" />
+      </span>
       <p className="font-heading text-lg font-medium">{title}</p>
       {hint && <p className="mt-1 max-w-md text-sm text-muted-foreground">{hint}</p>}
       {action && <div className="mt-5">{action}</div>}
@@ -62,7 +64,7 @@ export function ParticipantAvatar({
         size === "sm" ? "size-6 text-[10px]" : "size-8 text-xs",
         className,
       )}
-      style={{ background: colorKey ? speakerColor(colorKey) : "var(--ink)" }}
+      style={{ background: colorKey ? speakerColor(colorKey) : "linear-gradient(135deg, var(--brand), #e0509f)" }}
     >
       {initials(name)}
     </span>
@@ -98,8 +100,8 @@ export function DeadlineLabel({ deadline, status, raw }: { deadline: string | nu
       <span
         className={cn(
           "text-sm font-medium tabular",
-          tone === "overdue" && "text-brick",
-          tone === "soon" && "text-gold",
+          tone === "overdue" && "text-coral",
+          tone === "soon" && "text-sun",
           tone === "done" && "text-muted-foreground line-through",
         )}
       >
@@ -118,11 +120,11 @@ export function ConfidenceMeter({ value, className }: { value: number; className
     <span className={cn("inline-flex items-center gap-1.5", className)} title={`${Math.round(value * 100)}%`}>
       <span className="relative h-1 w-10 overflow-hidden rounded-full bg-muted">
         <span
-          className={cn("absolute inset-y-0 left-0 rounded-full", low ? "bg-brick" : "bg-sage")}
+          className={cn("absolute inset-y-0 left-0 rounded-full", low ? "bg-coral" : "bg-mint")}
           style={{ width: `${Math.round(value * 100)}%` }}
         />
       </span>
-      <span className={cn("font-mono text-[11px] tabular", low ? "text-brick" : "text-muted-foreground")}>
+      <span className={cn("font-mono text-[11px] tabular", low ? "text-coral" : "text-muted-foreground")}>
         {Math.round(value * 100)}
       </span>
     </span>

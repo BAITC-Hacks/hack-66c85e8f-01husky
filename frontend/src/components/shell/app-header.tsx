@@ -47,14 +47,12 @@ export function AppHeader({ user }: { user: User }) {
         onClick={() => setOpen(false)}
         className={cn(
           "relative inline-flex items-center gap-2 text-sm font-medium transition-colors",
-          mobile ? "rounded-md px-3 py-2.5" : "h-16 px-1",
-          isActive(href) ? "text-foreground" : "text-muted-foreground hover:text-foreground",
-          mobile && isActive(href) && "bg-muted",
+          mobile ? "rounded-lg px-3 py-2.5" : "rounded-full px-3.5 py-2",
+          isActive(href) ? "bg-brand-soft text-accent-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
         )}
       >
         <Icon className="size-4" />
         {label}
-        {!mobile && isActive(href) && <span className="absolute inset-x-0 bottom-0 h-[2px] rounded-full bg-gold" />}
       </Link>
     ));
 
@@ -64,7 +62,7 @@ export function AppHeader({ user }: { user: User }) {
     });
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b bg-card/85 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-4 sm:px-6">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
@@ -86,7 +84,7 @@ export function AppHeader({ user }: { user: User }) {
         <Link href="/meetings" className="shrink-0">
           <Wordmark />
         </Link>
-        <nav className="hidden items-center gap-6 md:flex">{nav(false)}</nav>
+        <nav className="hidden items-center gap-1 md:flex">{nav(false)}</nav>
 
         <div className="ml-auto flex items-center gap-1.5">
           <LocaleToggle className="hidden sm:inline-flex" />
@@ -102,7 +100,7 @@ export function AppHeader({ user }: { user: User }) {
               <DropdownMenuLabel className="font-normal">
                 <div className="font-medium">{user.name}</div>
                 <div className="text-xs text-muted-foreground">{user.email}</div>
-                <div className="mt-1 font-mono text-[10px] tracking-wider text-gold uppercase">
+                <div className="mt-1 text-[10px] font-semibold tracking-wider text-primary uppercase">
                   {user.role === "admin" ? t("admin") : t("user")}
                 </div>
               </DropdownMenuLabel>

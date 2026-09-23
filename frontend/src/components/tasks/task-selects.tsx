@@ -29,7 +29,7 @@ export function AssigneeSelect({
   const t = useTranslations("taskTable");
   return (
     <Select disabled={disabled} value={value ? String(value) : NONE} onValueChange={(v) => onChange(v === NONE ? null : Number(v))}>
-      <SelectTrigger className={cn(trigger, !value && "border-dashed border-brick/50 text-brick", className)}>
+      <SelectTrigger className={cn(trigger, !value && "border-dashed border-coral/50 text-coral", className)}>
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

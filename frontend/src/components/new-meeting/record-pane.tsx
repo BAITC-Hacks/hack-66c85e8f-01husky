@@ -88,7 +88,7 @@ export function RecordPane({
         </div>
       </div>
 
-      <div className="flex flex-col items-center rounded-lg border bg-card px-6 py-8">
+      <div className="flex flex-col items-center rounded-xl border bg-card shadow-soft px-6 py-8">
         <div className={cn("font-mono text-6xl font-light tracking-tight tabular", live ? "text-foreground" : "text-muted-foreground/50")}>
           {formatTimecode(rec.elapsed)}
         </div>
@@ -96,7 +96,7 @@ export function RecordPane({
         <div className="mt-3 h-4 font-mono text-[11px] text-muted-foreground">
           {live && t("sent", { size: formatBytes(rec.bytes) })}
           {rec.state === "denied" && (
-            <span className="inline-flex items-center gap-1 text-brick">
+            <span className="inline-flex items-center gap-1 text-coral">
               <MicOff className="size-3" /> {t("micDenied")}
             </span>
           )}

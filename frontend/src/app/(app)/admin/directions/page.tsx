@@ -4,7 +4,6 @@ import { Lock, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
-import { OrnamentDivider } from "@/components/brand/ornament";
 import { EmptyState, PageHeader } from "@/components/common/bits";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,7 +56,7 @@ export default function DirectionsPage() {
         </Button>
       </form>
 
-      <ol className="overflow-hidden rounded-lg border bg-card">
+      <ol className="overflow-hidden rounded-xl border bg-card shadow-soft">
         {data.map((d, i) => (
           <li key={d.id} className="flex items-center gap-4 border-b px-4 py-3 last:border-b-0">
             <span className="w-6 font-mono text-[11px] text-muted-foreground tabular">{String(i + 1).padStart(2, "0")}</span>
@@ -88,7 +87,6 @@ export default function DirectionsPage() {
           </li>
         ))}
       </ol>
-      <OrnamentDivider className="mt-10" />
     </div>
   );
 }

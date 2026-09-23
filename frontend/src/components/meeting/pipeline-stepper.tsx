@@ -17,7 +17,7 @@ export function PipelineStepper({ meeting }: { meeting: Meeting }) {
   const pct = Math.round((meeting.progress_pct ?? 0) * 100);
 
   return (
-    <section className="overflow-hidden rounded-lg border bg-card">
+    <section className="overflow-hidden rounded-xl border bg-card shadow-soft">
       <div className="flex flex-wrap items-end justify-between gap-4 border-b px-5 py-4 sm:px-6">
         <div>
           <h2 className="font-heading text-xl font-semibold">{botRecording ? t("bot_recording") : tm("processingTitle")}</h2>
@@ -33,11 +33,11 @@ export function PipelineStepper({ meeting }: { meeting: Meeting }) {
           const done = i < current;
           const active = i === current;
           return (
-            <li key={s} className={cn("flex items-center gap-3 bg-card px-4 py-3.5", active && "bg-gold-soft/40")}>
+            <li key={s} className={cn("flex items-center gap-3 bg-card px-4 py-3.5", active && "bg-brand-soft/70")}>
               <span
                 className={cn(
                   "flex size-7 shrink-0 items-center justify-center rounded-full border font-mono text-[11px]",
-                  done && "border-sage bg-sage text-white",
+                  done && "border-mint bg-mint text-white",
                   active && "border-primary text-primary",
                   !done && !active && "text-muted-foreground",
                 )}

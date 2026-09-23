@@ -9,9 +9,9 @@ const pill = "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 t
 const MEETING_TONE: Record<MeetingStatus, string> = {
   uploaded: "border-border bg-muted text-muted-foreground",
   processing: "border-primary/30 bg-primary/10 text-primary",
-  draft: "border-gold/40 bg-gold-soft text-foreground",
-  confirmed: "border-sage/40 bg-sage/10 text-sage",
-  failed: "border-brick/40 bg-brick/10 text-brick",
+  draft: "border-sun/40 bg-sun-soft text-foreground",
+  confirmed: "border-mint/40 bg-mint/10 text-mint",
+  failed: "border-coral/40 bg-coral/10 text-coral",
 };
 
 export function MeetingStatusBadge({ status, className }: { status: MeetingStatus; className?: string }) {
@@ -32,9 +32,9 @@ export function MeetingStatusBadge({ status, className }: { status: MeetingStatu
 const TASK_TONE: Record<TaskStatus, string> = {
   draft: "border-dashed border-border text-muted-foreground",
   confirmed: "border-primary/30 bg-primary/10 text-primary",
-  in_progress: "border-gold/40 bg-gold-soft text-foreground",
-  done: "border-sage/40 bg-sage/10 text-sage",
-  overdue: "border-brick/40 bg-brick/10 text-brick",
+  in_progress: "border-sun/40 bg-sun-soft text-foreground",
+  done: "border-mint/40 bg-mint/10 text-mint",
+  overdue: "border-coral/40 bg-coral/10 text-coral",
 };
 
 export function TaskStatusBadge({ status, className }: { status: TaskStatus; className?: string }) {
@@ -46,8 +46,8 @@ const URGENCY_LEVEL: Record<Urgency, number> = { low: 1, normal: 2, high: 3, cri
 const URGENCY_COLOR: Record<Urgency, string> = {
   low: "text-muted-foreground",
   normal: "text-primary",
-  high: "text-gold",
-  critical: "text-brick",
+  high: "text-sun",
+  critical: "text-coral",
 };
 
 /** Four ascending bars, like signal strength. */

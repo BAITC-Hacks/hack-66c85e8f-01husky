@@ -42,7 +42,7 @@ export function ConfirmAction({
           <AlertDialogCancel>{tc("cancel")}</AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
-            className={destructive ? "bg-brick text-white hover:bg-brick/90" : undefined}
+            className={destructive ? "bg-coral text-white hover:bg-coral/90" : undefined}
           >
             {actionLabel}
           </AlertDialogAction>

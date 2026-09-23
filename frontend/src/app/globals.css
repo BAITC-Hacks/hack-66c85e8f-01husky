@@ -5,9 +5,9 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Хаттама design tokens: "digital chancellery × steppe".
- * Paper, ink, steppe turquoise, gold. Never hardcode colors in components;
- * add a token here and map it in @theme below.
+ * Хаттама design tokens, Loom-inspired: airy lavender-grey canvas, white
+ * cards with soft shadows, "blurple" brand, deep indigo hero surfaces.
+ * Never hardcode colors in components; add a token here (light + .dark).
  */
 
 @theme inline {
@@ -15,8 +15,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-onest);
   --font-mono: var(--font-jetbrains);
-  --font-heading: var(--font-literata);
-  --font-serif: var(--font-literata);
+  --font-heading: var(--font-onest);
 
   --color-ring: var(--ring);
   --color-input: var(--input);
@@ -43,11 +42,13 @@
   /* domain tokens */
   --color-ink: var(--ink);
   --color-paper: var(--paper);
-  --color-steppe: var(--steppe);
-  --color-gold: var(--gold);
-  --color-gold-soft: var(--gold-soft);
-  --color-brick: var(--brick);
-  --color-sage: var(--sage);
+  --color-night: var(--night);
+  --color-brand: var(--brand);
+  --color-brand-soft: var(--brand-soft);
+  --color-sun: var(--sun);
+  --color-sun-soft: var(--sun-soft);
+  --color-coral: var(--coral);
+  --color-mint: var(--mint);
   --color-rec: var(--rec);
   --color-speaker-0: var(--speaker-0);
   --color-speaker-1: var(--speaker-1);
@@ -64,6 +65,9 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 
+  --shadow-soft: 0 1px 2px rgb(27 26 58 / 0.04), 0 6px 20px -6px rgb(27 26 58 / 0.08);
+  --shadow-lift: 0 2px 4px rgb(27 26 58 / 0.05), 0 16px 36px -12px rgb(98 93 245 / 0.28);
+
   --animate-stamp: stamp-in 0.55s cubic-bezier(0.2, 1.6, 0.4, 1) both;
   --animate-marker: marker-sweep 1.6s ease-out both;
   --animate-rec: rec-pulse 1.4s ease-in-out infinite;
@@ -71,84 +75,88 @@
 }
 
 :root {
-  --radius: 0.4rem;
+  --radius: 0.625rem;
 
-  --paper: oklch(0.962 0.012 85);
-  --ink: oklch(0.22 0.04 255);
-  --steppe: oklch(0.6 0.11 215);
-  --gold: oklch(0.7 0.14 78);
-  --gold-soft: oklch(0.92 0.06 88);
-  --brick: oklch(0.54 0.16 32);
-  --sage: oklch(0.58 0.09 155);
-  --rec: oklch(0.58 0.22 27);
+  --paper: #f7f7fb;
+  --ink: #1b1a3a;
+  --night: #16123f;
+  --brand: #625df5;
+  --brand-soft: #efeeff;
+  --sun: #e8a317;
+  --sun-soft: #fff4d9;
+  --coral: #ef4f6b;
+  --mint: #12a874;
+  --rec: #ff4d5e;
 
   --background: var(--paper);
   --foreground: var(--ink);
-  --card: oklch(0.985 0.006 85);
+  --card: #ffffff;
   --card-foreground: var(--ink);
-  --popover: oklch(0.99 0.004 85);
+  --popover: #ffffff;
   --popover-foreground: var(--ink);
-  --primary: var(--steppe);
-  --primary-foreground: oklch(0.99 0.004 85);
-  --secondary: oklch(0.925 0.016 85);
+  --primary: var(--brand);
+  --primary-foreground: #ffffff;
+  --secondary: #f1f0f8;
   --secondary-foreground: var(--ink);
-  --muted: oklch(0.935 0.014 85);
-  --muted-foreground: oklch(0.48 0.03 255);
-  --accent: oklch(0.92 0.03 205);
-  --accent-foreground: var(--ink);
-  --destructive: var(--brick);
-  --border: oklch(0.86 0.02 80);
-  --input: oklch(0.84 0.02 80);
-  --ring: var(--steppe);
+  --muted: #f2f2f7;
+  --muted-foreground: #6b6a85;
+  --accent: var(--brand-soft);
+  --accent-foreground: #3f39c9;
+  --destructive: var(--coral);
+  --border: #e7e6f0;
+  --input: #dddcea;
+  --ring: var(--brand);
 
-  --chart-1: var(--steppe);
-  --chart-2: var(--gold);
-  --chart-3: var(--sage);
-  --chart-4: var(--brick);
-  --chart-5: oklch(0.5 0.12 300);
+  --chart-1: var(--brand);
+  --chart-2: #ff8a4c;
+  --chart-3: #14b8a6;
+  --chart-4: #e0509f;
+  --chart-5: var(--sun);
 
-  --speaker-0: oklch(0.6 0.11 215);
-  --speaker-1: oklch(0.7 0.14 78);
-  --speaker-2: oklch(0.56 0.15 32);
-  --speaker-3: oklch(0.58 0.1 155);
-  --speaker-4: oklch(0.52 0.13 300);
-  --speaker-5: oklch(0.62 0.1 50);
+  --speaker-0: #625df5;
+  --speaker-1: #ff8a4c;
+  --speaker-2: #e0509f;
+  --speaker-3: #14b8a6;
+  --speaker-4: #e8a317;
+  --speaker-5: #3b82f6;
 }
 
 .dark {
-  --paper: oklch(0.175 0.03 255);
-  --ink: oklch(0.94 0.015 85);
-  --steppe: oklch(0.74 0.12 208);
-  --gold: oklch(0.8 0.14 82);
-  --gold-soft: oklch(0.33 0.06 80);
-  --brick: oklch(0.68 0.16 32);
-  --sage: oklch(0.72 0.1 155);
+  --paper: #0e0c22;
+  --ink: #eeedfb;
+  --night: #0a0820;
+  --brand: #7c77ff;
+  --brand-soft: #25225a;
+  --sun: #ffc14d;
+  --sun-soft: #3a2f16;
+  --coral: #ff7088;
+  --mint: #34d39a;
 
   --background: var(--paper);
   --foreground: var(--ink);
-  --card: oklch(0.21 0.032 255);
+  --card: #17153a;
   --card-foreground: var(--ink);
-  --popover: oklch(0.23 0.034 255);
+  --popover: #1c1a44;
   --popover-foreground: var(--ink);
-  --primary: var(--steppe);
-  --primary-foreground: oklch(0.17 0.03 255);
-  --secondary: oklch(0.27 0.035 255);
+  --primary: var(--brand);
+  --primary-foreground: #ffffff;
+  --secondary: #221f4c;
   --secondary-foreground: var(--ink);
-  --muted: oklch(0.25 0.03 255);
-  --muted-foreground: oklch(0.7 0.025 250);
-  --accent: oklch(0.3 0.05 215);
-  --accent-foreground: var(--ink);
-  --destructive: var(--brick);
-  --border: oklch(0.95 0.02 85 / 12%);
-  --input: oklch(0.95 0.02 85 / 16%);
-  --ring: var(--steppe);
+  --muted: #1f1d45;
+  --muted-foreground: #a3a1c4;
+  --accent: var(--brand-soft);
+  --accent-foreground: #d9d7ff;
+  --destructive: var(--coral);
+  --border: rgb(255 255 255 / 0.09);
+  --input: rgb(255 255 255 / 0.14);
+  --ring: var(--brand);
 
-  --speaker-0: oklch(0.74 0.12 208);
-  --speaker-1: oklch(0.8 0.14 82);
-  --speaker-2: oklch(0.68 0.15 32);
-  --speaker-3: oklch(0.72 0.1 155);
-  --speaker-4: oklch(0.68 0.12 300);
-  --speaker-5: oklch(0.72 0.1 50);
+  --speaker-0: #8f8bff;
+  --speaker-1: #ffa06b;
+  --speaker-2: #f06bb3;
+  --speaker-3: #2dd4bf;
+  --speaker-4: #ffc14d;
+  --speaker-5: #60a5fa;
 }
 
 @layer base {
@@ -157,7 +165,6 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "ss01", "cv11";
   }
   button:not(:disabled),
   [role="button"]:not(:disabled) {
@@ -172,30 +179,29 @@
     @apply font-heading tracking-tight;
   }
   ::selection {
-    background: var(--gold-soft);
+    background: color-mix(in oklab, var(--brand) 22%, transparent);
   }
 }
 
 @layer utilities {
-  /* faint paper fibre, inline SVG noise, no external assets */
-  .paper-grain {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.4  0 0 0 0 0.35  0 0 0 0 0.25  0 0 0 0.05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  /* deep indigo → blurple hero with soft glows (auth panel, highlights) */
+  .bg-hero {
+    background:
+      radial-gradient(60% 50% at 85% 10%, rgb(224 80 159 / 0.35), transparent 70%),
+      radial-gradient(50% 45% at 10% 90%, rgb(98 93 245 / 0.55), transparent 70%),
+      linear-gradient(160deg, #1b1552 0%, var(--night) 55%, #0c0a2a 100%);
   }
-  /* ruled ledger lines */
-  .ledger {
-    background-image: repeating-linear-gradient(
-      to bottom,
-      transparent 0,
-      transparent 2.5rem,
-      color-mix(in oklch, var(--border) 60%, transparent) 2.5rem,
-      color-mix(in oklch, var(--border) 60%, transparent) calc(2.5rem + 1px)
-    );
+  .text-gradient {
+    background: linear-gradient(90deg, #a5a1ff, #f39bd0);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
   .marker-highlight {
     background-image: linear-gradient(
       to right,
-      color-mix(in oklch, var(--gold) 38%, transparent),
-      color-mix(in oklch, var(--gold) 22%, transparent)
+      color-mix(in oklab, var(--brand) 26%, transparent),
+      color-mix(in oklab, var(--brand) 14%, transparent)
     );
     background-repeat: no-repeat;
     background-size: 100% 100%;

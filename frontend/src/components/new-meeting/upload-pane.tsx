@@ -46,7 +46,7 @@ export function UploadPane({
         className={cn(
           "group relative flex min-h-56 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed px-6 py-10 text-center transition-colors",
           drag ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:bg-muted/40",
-          error && "border-brick/60",
+          error && "border-coral/60",
         )}
       >
         <input
@@ -80,7 +80,7 @@ export function UploadPane({
           </>
         )}
       </div>
-      {error && <p className="text-xs text-brick">{error}</p>}
+      {error && <p className="text-xs text-coral">{error}</p>}
       <Button
         size="lg"
         className="h-11"

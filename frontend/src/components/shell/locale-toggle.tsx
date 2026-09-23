@@ -11,7 +11,7 @@ export function LocaleToggle({ persist = true, className }: { persist?: boolean;
   return (
     <div
       role="radiogroup"
-      className={cn("inline-flex rounded-md border bg-card p-0.5 font-mono text-[11px]", pending && "opacity-60", className)}
+      className={cn("inline-flex rounded-full border bg-card p-0.5 text-[11px]", pending && "opacity-60", className)}
     >
       {locales.map((l) => (
         <button
@@ -20,8 +20,8 @@ export function LocaleToggle({ persist = true, className }: { persist?: boolean;
           aria-checked={locale === l}
           onClick={() => switchTo(l, persist)}
           className={cn(
-            "rounded-[4px] px-2 py-1 font-semibold tracking-wider transition-colors",
-            locale === l ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground",
+            "rounded-full px-2.5 py-1 font-semibold tracking-wide transition-colors",
+            locale === l ? "bg-primary text-primary-foreground shadow-soft" : "text-muted-foreground hover:text-foreground",
           )}
         >
           {LABEL[l]}

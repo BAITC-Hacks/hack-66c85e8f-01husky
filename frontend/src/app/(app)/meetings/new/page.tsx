@@ -70,8 +70,8 @@ export default function NewMeetingPage() {
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         {/* Protocol card */}
-        <section className="h-fit rounded-lg border bg-card p-5 sm:p-6 lg:sticky lg:top-24">
-          <div className="mb-5 flex items-center justify-between font-mono text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
+        <section className="h-fit rounded-xl border bg-card shadow-soft p-5 sm:p-6 lg:sticky lg:top-24">
+          <div className="mb-5 flex items-center justify-between text-xs font-semibold tracking-wide text-primary uppercase">
             <span>Хаттама · Протокол</span>
             <span>№ ———</span>
           </div>
@@ -193,7 +193,7 @@ export default function NewMeetingPage() {
             </TabsContent>
           </Tabs>
           {Object.keys(errors).length > 0 && (
-            <p className="mt-4 text-center text-xs text-brick lg:hidden">{Object.values(errors)[0]?.message}</p>
+            <p className="mt-4 text-center text-xs text-coral lg:hidden">{Object.values(errors)[0]?.message}</p>
           )}
         </section>
       </div>

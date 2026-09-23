@@ -3,9 +3,9 @@
 import { useTranslations } from "next-intl";
 
 const COLORS: Record<string, string> = {
-  ru: "var(--steppe)",
-  kk: "var(--gold)",
-  mixed: "var(--sage)",
+  ru: "var(--brand)",
+  kk: "var(--sun)",
+  mixed: "var(--mint)",
   other: "var(--muted-foreground)",
 };
 

@@ -27,10 +27,10 @@ const ALL = "__all";
 type CounterKey = "in_progress" | "overdue" | "done" | "due_soon";
 
 const COUNTERS: { key: CounterKey; icon: typeof AlarmClock; tone: string }[] = [
-  { key: "in_progress", icon: CircleDashed, tone: "var(--steppe)" },
-  { key: "overdue", icon: TriangleAlert, tone: "var(--brick)" },
-  { key: "done", icon: CheckCircle2, tone: "var(--sage)" },
-  { key: "due_soon", icon: AlarmClock, tone: "var(--gold)" },
+  { key: "in_progress", icon: CircleDashed, tone: "var(--brand)" },
+  { key: "overdue", icon: TriangleAlert, tone: "var(--coral)" },
+  { key: "done", icon: CheckCircle2, tone: "var(--mint)" },
+  { key: "due_soon", icon: AlarmClock, tone: "var(--sun)" },
 ];
 
 function FilterSelect<T extends string | number>({
@@ -47,7 +47,7 @@ function FilterSelect<T extends string | number>({
   const tc = useTranslations("common");
   return (
     <div className="grid min-w-0 gap-1">
-      <Label className="font-mono text-[10px] tracking-wider text-muted-foreground uppercase">{label}</Label>
+      <Label className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">{label}</Label>
       <Select
         value={value === undefined ? ALL : String(value)}
         onValueChange={(v) => {
@@ -117,7 +117,7 @@ export default function TasksPage() {
         eyebrow={t("subtitle")}
         title={t("title")}
         actions={
-          <label className="inline-flex cursor-pointer items-center gap-2.5 rounded-lg border bg-card px-3 py-2 text-sm">
+          <label className="inline-flex cursor-pointer items-center gap-2.5 rounded-xl border bg-card shadow-soft px-3 py-2 text-sm">
             <Switch checked={!!filters.mine} onCheckedChange={(v) => set("mine", v || undefined)} />
             {t("onlyMine")}
           </label>
@@ -133,7 +133,7 @@ export default function TasksPage() {
               key={key}
               onClick={() => onCounter(key)}
               className={cn(
-                "group relative overflow-hidden rounded-lg border bg-card p-4 text-left transition-all hover:-translate-y-px sm:p-5",
+                "group relative overflow-hidden rounded-xl border bg-card shadow-soft p-4 text-left transition-all hover:-translate-y-px sm:p-5",
                 active && "ring-2",
               )}
               style={{ ["--tw-ring-color" as string]: tone }}
@@ -143,7 +143,7 @@ export default function TasksPage() {
                 <span className="text-sm">{t(`counters.${key}`)}</span>
                 <Icon className="size-4" style={{ color: tone }} />
               </div>
-              <div className="mt-3 font-heading text-5xl font-semibold tabular sm:text-6xl" style={{ color: stats ? tone : undefined }}>
+              <div className="mt-3 font-heading text-5xl font-bold tracking-tight tabular sm:text-6xl" style={{ color: stats ? tone : undefined }}>
                 {stats ? stats[key as keyof TaskStats] : "·"}
               </div>
             </button>
@@ -152,7 +152,7 @@ export default function TasksPage() {
       </div>
 
       {/* Filters */}
-      <div className="mb-4 grid grid-cols-2 items-end gap-3 rounded-lg border bg-card p-3 sm:grid-cols-3 lg:grid-cols-[repeat(5,minmax(0,1fr))_auto]">
+      <div className="mb-4 grid grid-cols-2 items-end gap-3 rounded-xl border bg-card shadow-soft p-3 sm:grid-cols-3 lg:grid-cols-[repeat(5,minmax(0,1fr))_auto]">
         <FilterSelect<TaskStatus>
           label={t("filters.status")}
           value={filters.status}
@@ -205,7 +205,7 @@ export default function TasksPage() {
       ) : rows.length === 0 ? (
         <EmptyState title={t("empty")} />
       ) : (
-        <div className="overflow-hidden rounded-lg border bg-card">
+        <div className="overflow-hidden rounded-xl border bg-card shadow-soft">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/40 hover:bg-muted/40">
@@ -222,14 +222,14 @@ export default function TasksPage() {
                 const name = pName(task.assignee_participant_id);
                 const tone = deadlineInfo(task.deadline, task.status).tone;
                 return (
-                  <TableRow key={task.id} className={cn(tone === "overdue" && "bg-brick/[0.04]")}>
+                  <TableRow key={task.id} className={cn(tone === "overdue" && "bg-coral/[0.04]")}>
                     <TableCell className="whitespace-normal">
                       <div className="flex items-start gap-2">
                         <span className="font-medium">{task.text}</span>
                         {task.quote && (
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Quote className="mt-1 size-3 shrink-0 text-gold" />
+                              <Quote className="mt-1 size-3 shrink-0 text-primary" />
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs italic">«{task.quote}»</TooltipContent>
                           </Tooltip>
@@ -245,7 +245,7 @@ export default function TasksPage() {
                     <TableCell>
                       <span className="inline-flex items-center gap-2">
                         <ParticipantAvatar name={name ?? task.assignee_name} size="sm" />
-                        <span className={cn("text-sm", !name && "text-brick")}>{name ?? task.assignee_name}</span>
+                        <span className={cn("text-sm", !name && "text-coral")}>{name ?? task.assignee_name}</span>
                       </span>
                     </TableCell>
                     <TableCell>

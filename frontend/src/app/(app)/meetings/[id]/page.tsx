@@ -97,10 +97,10 @@ export default function MeetingPage() {
   return (
     <div className="grid gap-6">
       {/* ---------- Header ---------- */}
-      <header className="relative border-b pb-6">
+      <header className="relative rounded-2xl border bg-card p-5 shadow-soft sm:p-6">
         <Link
           href="/meetings"
-          className="mb-3 inline-flex items-center gap-1 font-mono text-[11px] tracking-[0.18em] text-muted-foreground uppercase hover:text-foreground"
+          className="mb-3 inline-flex items-center gap-1 text-xs font-semibold tracking-wide text-primary uppercase hover:text-foreground"
         >
           <ArrowLeft className="size-3" /> {t("back")} · № {m.id}
         </Link>
@@ -110,7 +110,7 @@ export default function MeetingPage() {
               <MeetingStatusBadge status={m.status} />
               {m.model_info && <PrivacyBadge modelInfo={m.model_info} />}
             </div>
-            <h1 className="font-heading text-3xl font-semibold text-balance sm:text-4xl">{m.title}</h1>
+            <h1 className="font-heading text-3xl font-bold text-balance sm:text-4xl">{m.title}</h1>
             <dl className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
               <div className="inline-flex items-center gap-1.5">
                 <CalendarDays className="size-4" />
@@ -147,7 +147,7 @@ export default function MeetingPage() {
             date={formatDate(m.confirmed_at ?? m.meeting_date, locale, "dd.MM.yyyy")}
             refNo={m.sed_ref}
             animate={justConfirmed}
-            className="absolute top-0 right-0 hidden size-36 lg:block"
+            className="absolute top-3 right-4 hidden size-32 lg:block"
           />
         )}
       </header>
@@ -155,8 +155,8 @@ export default function MeetingPage() {
       {/* ---------- Processing / failure ---------- */}
       {busy && <PipelineStepper meeting={m} />}
       {m.status === "failed" && (
-        <section className="flex flex-col gap-4 rounded-lg border border-brick/40 bg-brick/5 p-6 sm:flex-row sm:items-center">
-          <AlertOctagon className="size-8 shrink-0 text-brick" />
+        <section className="flex flex-col gap-4 rounded-lg border border-coral/40 bg-coral/5 p-6 sm:flex-row sm:items-center">
+          <AlertOctagon className="size-8 shrink-0 text-coral" />
           <div className="flex-1">
             <p className="font-heading text-lg font-semibold">{t("failed")}</p>
             <p className="font-mono text-sm text-muted-foreground">{m.error}</p>
@@ -183,7 +183,7 @@ export default function MeetingPage() {
           )}
 
           <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
-            <section className="overflow-hidden rounded-lg border bg-card lg:sticky lg:top-20">
+            <section className="overflow-hidden rounded-xl border bg-card shadow-soft lg:sticky lg:top-20">
               <div className="flex items-baseline justify-between border-b px-4 py-3 sm:px-6">
                 <h2 className="font-heading text-lg font-semibold">{t("transcript")}</h2>
                 <span className="font-mono text-[11px] text-muted-foreground">
@@ -210,7 +210,7 @@ export default function MeetingPage() {
                 </TabsTrigger>
                 <TabsTrigger value="speakers" className="gap-1.5">
                   {t("speakers")}
-                  {unresolved > 0 && <span className="size-1.5 rounded-full bg-brick" />}
+                  {unresolved > 0 && <span className="size-1.5 rounded-full bg-coral" />}
                 </TabsTrigger>
                 <TabsTrigger value="summary">{t("summary")}</TabsTrigger>
               </TabsList>

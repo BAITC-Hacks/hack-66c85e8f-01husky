@@ -52,7 +52,7 @@ export function BotPane({ onSubmit, pending }: { onSubmit: (v: { platform: Platf
               aria-checked={platform === p.id}
               onClick={() => setPlatform(p.id)}
               className={cn(
-                "flex flex-col items-center gap-2 rounded-lg border bg-card px-3 py-4 text-sm transition-all",
+                "flex flex-col items-center gap-2 rounded-xl border bg-card shadow-soft px-3 py-4 text-sm transition-all",
                 platform === p.id ? "border-primary ring-2 ring-primary/20" : "hover:border-primary/40",
               )}
             >

@@ -71,11 +71,11 @@ export function VoiceprintSheet({ participant, onOpenChange }: { participant: Pa
 
         <div className="grid gap-5 p-4">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[11px] tracking-[0.18em] text-muted-foreground uppercase">{t("voiceprint")}</span>
+            <span className="text-xs font-semibold tracking-wide text-primary uppercase">{t("voiceprint")}</span>
             <span
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium",
-                participant.has_voiceprint ? "border-sage/40 bg-sage/10 text-sage" : "border-dashed text-muted-foreground",
+                participant.has_voiceprint ? "border-mint/40 bg-mint/10 text-mint" : "border-dashed text-muted-foreground",
               )}
             >
               <AudioWaveform className="size-3" />
@@ -84,7 +84,7 @@ export function VoiceprintSheet({ participant, onOpenChange }: { participant: Pa
           </div>
 
           <p className="text-sm text-muted-foreground">{t("recordHint")}</p>
-          <p className="rounded-md border-l-2 border-gold bg-gold-soft/40 px-3 py-2 text-sm italic">{t("sample")}</p>
+          <p className="rounded-md border-l-2 border-primary bg-brand-soft/70 px-3 py-2 text-sm italic">{t("sample")}</p>
 
           {/* Countdown ring */}
           <div className="flex flex-col items-center py-4">
@@ -96,7 +96,7 @@ export function VoiceprintSheet({ participant, onOpenChange }: { participant: Pa
                   cy="50"
                   r="44"
                   fill="none"
-                  stroke={recording ? "var(--rec)" : "var(--steppe)"}
+                  stroke={recording ? "var(--rec)" : "var(--brand)"}
                   strokeWidth="4"
                   strokeLinecap="round"
                   strokeDasharray={2 * Math.PI * 44}
@@ -113,7 +113,7 @@ export function VoiceprintSheet({ participant, onOpenChange }: { participant: Pa
                     <span className="text-xs text-muted-foreground">{t("recording")}</span>
                   </>
                 ) : rec.state === "denied" ? (
-                  <MicOff className="size-8 text-brick" />
+                  <MicOff className="size-8 text-coral" />
                 ) : (
                   <Mic className="size-8 text-muted-foreground" />
                 )}
@@ -135,7 +135,7 @@ export function VoiceprintSheet({ participant, onOpenChange }: { participant: Pa
           {participant.has_voiceprint && (
             <Button
               variant="ghost"
-              className="text-brick"
+              className="text-coral"
               disabled={remove.isPending || recording}
               onClick={() => remove.mutate(participant.id, { onSuccess: () => toast(t("removed")) })}
             >

@@ -45,9 +45,9 @@ export function TaskCard({
     <li
       id={`task-${task.id}`}
       className={cn(
-        "group relative rounded-lg border bg-card p-4 transition-shadow",
-        highlighted && "ring-2 ring-gold",
-        low && "border-l-4 border-l-brick/70",
+        "group relative rounded-xl border bg-card shadow-soft p-4 transition-shadow",
+        highlighted && "ring-2 ring-primary",
+        low && "border-l-4 border-l-coral/70",
       )}
     >
       <div className="flex items-start gap-3">
@@ -67,8 +67,8 @@ export function TaskCard({
               className="mt-1.5 flex w-full items-start gap-1.5 text-left text-xs text-muted-foreground transition-colors hover:text-foreground"
               title={t("showInTranscript")}
             >
-              <Quote className="mt-0.5 size-3 shrink-0 text-gold" />
-              <span className="line-clamp-2 italic underline decoration-gold/40 decoration-dotted underline-offset-4">{task.quote}</span>
+              <Quote className="mt-0.5 size-3 shrink-0 text-primary" />
+              <span className="line-clamp-2 italic underline decoration-primary/40 decoration-dotted underline-offset-4">{task.quote}</span>
             </button>
           )}
         </div>
@@ -82,7 +82,7 @@ export function TaskCard({
             }
             aria-label="delete"
           >
-            <Trash2 className="text-brick" />
+            <Trash2 className="text-coral" />
           </Button>
         )}
       </div>
@@ -115,7 +115,7 @@ export function TaskCard({
         <TaskStatusBadge status={task.status} />
         {task.deadline_raw && <span className="text-muted-foreground italic">«{task.deadline_raw}»</span>}
         <span className="ml-auto inline-flex items-center gap-1.5 text-muted-foreground">
-          {low && <AlertTriangle className="size-3 text-brick" aria-label={t("lowConfidence")} />}
+          {low && <AlertTriangle className="size-3 text-coral" aria-label={t("lowConfidence")} />}
           {task.segment_idx < 0 ? t("manual") : <ConfidenceMeter value={task.confidence} />}
         </span>
       </div>

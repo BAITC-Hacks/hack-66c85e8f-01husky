@@ -78,7 +78,7 @@ export function Transcript({
             }}
             className={cn(
               "group relative grid grid-cols-[3.25rem_1fr] gap-3 py-3 pr-4 pl-4 transition-colors sm:pr-6",
-              active && "bg-gold-soft/40",
+              active && "bg-brand-soft/70",
               sameSpeaker && "border-t-transparent pt-1",
             )}
           >
@@ -105,8 +105,8 @@ export function Transcript({
                 <span
                   className={cn(
                     "rounded border px-1 font-mono text-[9px] leading-4 tracking-wider",
-                    s.lang === "kk" && "border-gold/50 text-gold",
-                    s.lang === "mixed" && "border-sage/50 text-sage",
+                    s.lang === "kk" && "border-sun/50 text-sun",
+                    s.lang === "mixed" && "border-mint/50 text-mint",
                     s.lang === "ru" && "text-muted-foreground",
                   )}
                 >

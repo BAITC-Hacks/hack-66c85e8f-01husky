@@ -17,13 +17,13 @@ export function Markdown({ children }: { children: string }) {
           h1: (p) => <h3 className="mt-5 mb-2 font-heading text-lg font-semibold first:mt-0" {...p} />,
           h2: (p) => (
             <h3
-              className="mt-6 mb-2 flex items-center gap-2 font-mono text-[11px] font-medium tracking-[0.18em] text-gold uppercase first:mt-0 after:h-px after:flex-1 after:bg-border"
+              className="mt-6 mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide text-primary uppercase first:mt-0 after:h-px after:flex-1 after:bg-border"
               {...p}
             />
           ),
           h3: (p) => <h4 className="mt-4 mb-1 font-semibold" {...p} />,
           p: (p) => <p className="my-2" {...p} />,
-          ul: (p) => <ul className="my-2 list-disc space-y-1 pl-5 marker:text-gold" {...p} />,
+          ul: (p) => <ul className="my-2 list-disc space-y-1 pl-5 marker:text-primary" {...p} />,
           ol: (p) => <ol className="my-2 list-decimal space-y-1 pl-5 marker:font-mono marker:text-xs marker:text-muted-foreground" {...p} />,
           strong: (p) => <strong className="font-semibold text-foreground" {...p} />,
         }}
@@ -77,7 +77,7 @@ export function SummaryPanel({ meetingId, summary, editable }: { meetingId: numb
   }
 
   return (
-    <div className="relative rounded-lg border bg-card p-5">
+    <div className="relative rounded-xl border bg-card shadow-soft p-5">
       {editable && (
         <Button
           variant="ghost"

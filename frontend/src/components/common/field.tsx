@@ -25,7 +25,7 @@ export function Field({
       </Label>
       {children}
       {error ? (
-        <p className="text-xs text-brick">{error}</p>
+        <p className="text-xs text-coral">{error}</p>
       ) : hint ? (
         <p className="text-xs text-muted-foreground">{hint}</p>
       ) : null}

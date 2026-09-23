@@ -21,9 +21,9 @@ const ICON: Record<NotificationKind, typeof Bell> = {
 };
 const TONE: Record<NotificationKind, string> = {
   assigned: "text-primary bg-primary/10",
-  due_soon: "text-gold bg-gold-soft",
-  overdue: "text-brick bg-brick/10",
-  protocol_ready: "text-sage bg-sage/10",
+  due_soon: "text-sun bg-sun-soft",
+  overdue: "text-coral bg-coral/10",
+  protocol_ready: "text-mint bg-mint/10",
 };
 
 function href(n: Notification) {
@@ -46,7 +46,7 @@ export function NotificationBell() {
         <Button variant="ghost" size="icon" className="relative" aria-label={t("title")}>
           <Bell className={cn("size-[18px]", unread && "origin-top animate-[wiggle_1s_ease-in-out_1]")} />
           {unread > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brick px-1 font-mono text-[10px] font-semibold text-white">
+            <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-coral px-1 font-mono text-[10px] font-semibold text-white">
               {unread > 9 ? "9+" : unread}
             </span>
           )}
@@ -74,7 +74,7 @@ export function NotificationBell() {
                         if (!n.read_at) read.mutate(n.id);
                         setOpen(false);
                       }}
-                      className={cn("flex gap-3 px-4 py-3 transition-colors hover:bg-muted/60", !n.read_at && "bg-gold-soft/30")}
+                      className={cn("flex gap-3 px-4 py-3 transition-colors hover:bg-muted/60", !n.read_at && "bg-brand-soft/50")}
                     >
                       <span className={cn("mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full", TONE[n.kind])}>
                         <Icon className="size-3.5" />
