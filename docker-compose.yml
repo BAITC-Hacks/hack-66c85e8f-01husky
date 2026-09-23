@@ -37,9 +37,21 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     env_file: .env
-    command: ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    command:
+      - sh
+      - -c
+      - >-
+        uv run --no-sync alembic upgrade head &&
+        uv run --no-sync python -m app.seed &&
+        exec uv run --no-sync uvicorn app.main:app --host 0.0.0.0 --port 8000
     ports:
       - "8000:8000"
+    healthcheck:
+      test: ["CMD", "uv", "run", "--no-sync", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
     volumes:
       - ./backend/data:/app/backend/data
       - ./backend/outbox:/app/backend/outbox
@@ -56,11 +68,13 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     env_file: .env
-    command: ["uv", "run", "celery", "-A", "app.tasks.celery_app:celery_app", "worker", "--loglevel=info"]
+    command: ["uv", "run", "--no-sync", "celery", "-A", "app.tasks.celery_app:celery_app", "worker", "--loglevel=info"]
     volumes:
       - ./backend/data:/app/backend/data
       - ./backend/outbox:/app/backend/outbox
     depends_on:
+      api:
+        condition: service_healthy
       postgres:
         condition: service_healthy
       redis:
@@ -71,11 +85,13 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     env_file: .env
-    command: ["uv", "run", "celery", "-A", "app.tasks.celery_app:celery_app", "beat", "--loglevel=info"]
+    command: ["uv", "run", "--no-sync", "celery", "-A", "app.tasks.celery_app:celery_app", "beat", "--loglevel=info"]
     volumes:
       - ./backend/data:/app/backend/data
       - ./backend/outbox:/app/backend/outbox
     depends_on:
+      api:
+        condition: service_healthy
       postgres:
         condition: service_healthy
       redis:

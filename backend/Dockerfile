@@ -15,6 +15,6 @@ WORKDIR /app
 COPY pipeline/ /app/pipeline/
 COPY backend/ /app/backend/
 WORKDIR /app/backend
-RUN uv sync --no-dev --project /app/backend
+RUN uv sync --locked --no-dev --project /app/backend
 
 EXPOSE 8000
