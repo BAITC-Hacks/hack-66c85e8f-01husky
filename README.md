@@ -19,7 +19,7 @@
 
 ## Демо Видео
 
-[![Демо Видео: от совещания до контроля поручений](docs/screenshots/demo-video-cover.png)](https://drive.google.com/file/d/1XTiGx9h5mcA_WB-fe_y8MCoQmDu9jzl7/view?usp=sharing)
+https://github.com/user-attachments/assets/8aec9702-6772-4f75-bc86-cb9ea3ab2fc2
 
 [Смотреть на Google Drive](https://drive.google.com/file/d/1XTiGx9h5mcA_WB-fe_y8MCoQmDu9jzl7/view?usp=sharing) · [Скачать MP4](demo/Kenes-AI-Demo-v2.mp4?raw=true) · 44 с · 1080p.
 
