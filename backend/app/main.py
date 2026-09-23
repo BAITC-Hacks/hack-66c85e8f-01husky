@@ -2,6 +2,7 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
+from app.routers import auth, directions, participants
 
 settings = get_settings()
 app = FastAPI(title=settings.app_name, docs_url="/docs", openapi_url="/openapi.json")
@@ -21,9 +22,9 @@ def health() -> dict[str, str | bool]:
     return {"status": "ok", "pipeline_fake": settings.pipeline_fake}
 
 
-# Routers register here as they land. Keep alphabetical.
-from app.routers import auth
-
+# Routers: add to the import above and include here. Keep alphabetical.
 api.include_router(auth.router)
+api.include_router(directions.router)
+api.include_router(participants.router)
 
 app.include_router(api)

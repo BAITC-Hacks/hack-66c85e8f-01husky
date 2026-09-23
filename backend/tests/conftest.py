@@ -46,12 +46,15 @@ def seed(db):
     )
     user = User(email="user@example.com", password_hash=hash_password("user123"), name="User")
     db.add_all([admin, user])
+    db.flush()
     db.add_all(Direction(name=n) for n in ["Финансы", "ИТ", "Юридическое", "Другое"])
     db.add_all(
         [
             Participant(name="Серик Нурланов", email="serik@example.com", position="Директор"),
             Participant(name="Айбек Сериков", email="aibek@example.com", position="Финансист"),
-            Participant(name="Дана Ахметова", email="user@example.com", position="Юрист"),
+            Participant(
+                name="Дана Ахметова", email="user@example.com", position="Юрист", user_id=user.id
+            ),
         ]
     )
     db.commit()
@@ -64,12 +67,14 @@ def login(client: TestClient, email: str, password: str) -> None:
 
 
 @pytest.fixture
-def admin_client(client, seed):
-    login(client, "admin@example.com", "admin123")
-    return client
+def admin_client(seed) -> TestClient:
+    c = TestClient(app)
+    login(c, "admin@example.com", "admin123")
+    return c
 
 
 @pytest.fixture
-def user_client(client, seed):
-    login(client, "user@example.com", "user123")
-    return client
+def user_client(seed) -> TestClient:
+    c = TestClient(app)
+    login(c, "user@example.com", "user123")
+    return c
