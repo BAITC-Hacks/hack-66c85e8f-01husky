@@ -2,7 +2,7 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.routers import auth, directions, meetings, participants
+from app.routers import auth, directions, meetings, participants, tasks
 
 settings = get_settings()
 app = FastAPI(title=settings.app_name, docs_url="/docs", openapi_url="/openapi.json")
@@ -27,5 +27,6 @@ api.include_router(auth.router)
 api.include_router(directions.router)
 api.include_router(meetings.router)
 api.include_router(participants.router)
+api.include_router(tasks.router)
 
 app.include_router(api)

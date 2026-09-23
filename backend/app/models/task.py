@@ -39,4 +39,5 @@ class Task(Base):
     done_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     assignee = relationship("Participant", lazy="joined")
+    meeting = relationship("Meeting", back_populates="tasks", lazy="joined")
     direction = relationship("Direction", lazy="joined")

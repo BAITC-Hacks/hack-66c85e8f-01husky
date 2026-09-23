@@ -42,7 +42,13 @@ class Meeting(Base):
     speaker_map = relationship(
         "SpeakerMap", cascade="all, delete-orphan", lazy="selectin", order_by="SpeakerMap.speaker"
     )
-    tasks = relationship("Task", cascade="all, delete-orphan", lazy="selectin", order_by="Task.id")
+    tasks = relationship(
+        "Task",
+        back_populates="meeting",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        order_by="Task.id",
+    )
 
 
 class MeetingParticipant(Base):
