@@ -5,7 +5,7 @@ import { UrgencyMark } from "@/components/common/badges";
 import { TaskStatusBadge } from "@/components/common/badges";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Direction, Participant, TaskStatus, Urgency } from "@/lib/api/types";
-import { TASK_STATUSES, URGENCY_ORDER } from "@/lib/format";
+import { allowedStatuses, TASK_STATUSES, URGENCY_ORDER } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const NONE = "__none";
@@ -116,12 +116,7 @@ export function StatusSelect({
   onChange: (s: TaskStatus) => void;
   disabled?: boolean;
 }) {
-  const options: TaskStatus[] =
-    value === "draft"
-      ? ["draft"]
-      : value === "overdue"
-        ? ["overdue", "in_progress", "done"]
-        : ["confirmed", "in_progress", "done"];
+  const options = allowedStatuses(value);
   return (
     <Select
       disabled={disabled || value === "draft"}

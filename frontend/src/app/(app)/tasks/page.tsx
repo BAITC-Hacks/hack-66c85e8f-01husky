@@ -1,19 +1,38 @@
 "use client";
 
-import { AlarmClock, CheckCircle2, CircleDashed, FilterX, Quote, TriangleAlert } from "lucide-react";
+import {
+  AlarmClock,
+  CalendarClock,
+  CheckCircle2,
+  CircleDashed,
+  FilterX,
+  List,
+  Quote,
+  SquareKanban,
+  TriangleAlert,
+} from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { UrgencyMark } from "@/components/common/badges";
 import { QueryError } from "@/components/common/error-screen";
 import { DeadlineLabel, EmptyState, PageHeader, ParticipantAvatar } from "@/components/common/bits";
+import { SEGMENT_ON } from "@/components/common/segment";
 import { StatusSelect } from "@/components/tasks/task-selects";
+import {
+  TASK_VIEWS,
+  TaskAgenda,
+  TaskBoard,
+  type TaskView,
+  type TaskViewProps,
+} from "@/components/tasks/task-views";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useDirections } from "@/lib/api/queries/directions";
 import { useMeetings } from "@/lib/api/queries/meetings";
@@ -24,6 +43,8 @@ import { deadlineInfo, TASK_STATUSES, URGENCY_ORDER } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const ALL = "__all";
+const VIEW_KEY = "kenes.tasks.view";
+const VIEW_ICON: Record<TaskView, typeof List> = { list: List, board: SquareKanban, agenda: CalendarClock };
 type CounterKey = "in_progress" | "overdue" | "done" | "due_soon";
 
 const COUNTERS: { key: CounterKey; icon: typeof AlarmClock; tone: string }[] = [
@@ -79,6 +100,21 @@ export default function TasksPage() {
   const tt = useTranslations("taskTable");
   const tst = useTranslations("taskStatus");
   const tu = useTranslations("urgency");
+  const tv = useTranslations("tasks.views");
+
+  const [view, setView] = useState<TaskView>("list");
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(VIEW_KEY) as TaskView | null;
+      if (saved && TASK_VIEWS.includes(saved)) setView(saved);
+    } catch {}
+  }, []);
+  const changeView = (v: TaskView) => {
+    setView(v);
+    try {
+      localStorage.setItem(VIEW_KEY, v);
+    } catch {}
+  };
 
   const [filters, setFilters] = useState<TaskFilters>({});
   const [dueSoon, setDueSoon] = useState(false);
@@ -105,6 +141,16 @@ export default function TasksPage() {
   const pName = (id: number | null) => participants.find((p) => p.id === id)?.name;
   const dName = (task: Task) =>
     task.direction_name ?? directions.find((d) => d.id === task.direction_id)?.name ?? "—";
+  const viewProps: TaskViewProps = {
+    tasks: rows,
+    assigneeName: (task) => {
+      const name = pName(task.assignee_participant_id);
+      return { name: name ?? task.assignee_name, matched: !!name };
+    },
+    directionName: dName,
+    onStatus: (task, status, opts) => update.mutate({ id: task.id, status }, { onError: opts?.onError }),
+    busy: update.isPending,
+  };
   const hasFilters = Object.values(filters).some((v) => v !== undefined && v !== false) || dueSoon;
 
   const onCounter = (key: CounterKey) => {
@@ -208,13 +254,42 @@ export default function TasksPage() {
         </Button>
       </div>
 
-      {/* Table */}
+      {/* View switcher */}
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <span className="text-muted-foreground tabular text-sm">
+          {tasks ? t("count", { count: rows.length }) : ""}
+        </span>
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          size="sm"
+          value={view}
+          onValueChange={(v) => v && changeView(v as TaskView)}
+          aria-label={tv("label")}
+          className={`bg-card shadow-soft ${SEGMENT_ON}`}
+        >
+          {TASK_VIEWS.map((v) => {
+            const Icon = VIEW_ICON[v];
+            return (
+              <ToggleGroupItem key={v} value={v} aria-label={tv(v)} className="gap-1.5 px-3">
+                <Icon className="size-4" />
+                <span className="hidden sm:inline">{tv(v)}</span>
+              </ToggleGroupItem>
+            );
+          })}
+        </ToggleGroup>
+      </div>
+
       {isLoading ? (
         <Skeleton className="h-80 rounded-lg" />
       ) : error ? (
         <QueryError error={error} onRetry={() => refetch()} />
       ) : rows.length === 0 ? (
         <EmptyState title={t("empty")} />
+      ) : view === "board" ? (
+        <TaskBoard {...viewProps} />
+      ) : view === "agenda" ? (
+        <TaskAgenda {...viewProps} />
       ) : (
         <>
           {/* Mobile/tablet: cards */}
