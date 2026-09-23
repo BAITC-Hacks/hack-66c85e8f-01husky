@@ -122,7 +122,11 @@ export function TaskCard({
         {task.deadline_raw && <span className="text-muted-foreground italic">«{task.deadline_raw}»</span>}
         <span className="text-muted-foreground ml-auto inline-flex items-center gap-1.5">
           {low && <AlertTriangle className="text-coral size-3" aria-label={t("lowConfidence")} />}
-          {task.segment_idx < 0 ? t("manual") : <ConfidenceMeter value={task.confidence} />}
+          {task.segment_idx == null || task.segment_idx < 0 ? (
+            t("manual")
+          ) : (
+            <ConfidenceMeter value={task.confidence} />
+          )}
         </span>
       </div>
     </li>

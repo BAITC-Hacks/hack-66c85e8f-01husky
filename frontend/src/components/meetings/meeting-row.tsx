@@ -1,9 +1,8 @@
 "use client";
 
-import { ChevronRight, Clock } from "lucide-react";
+import { ChevronRight, Clock, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { AvatarStack } from "@/components/common/bits";
 import { MeetingStatusBadge } from "@/components/common/badges";
 import type { MeetingListItem } from "@/lib/api/types";
 import { formatDate, formatDuration } from "@/lib/format";
@@ -61,7 +60,10 @@ export function MeetingRow({ m, index }: { m: MeetingListItem; index: number }) 
             <span className={cn("text-muted-foreground text-xs", m.tasks_count && "text-foreground")}>
               {t("tasksCount", { count: m.tasks_count })}
             </span>
-            <AvatarStack names={m.participants.map((p) => p.name)} />
+            <span className="text-muted-foreground inline-flex items-center gap-1 text-xs">
+              <UsersRound className="size-3.5" />
+              {m.participants_count}
+            </span>
           </div>
         </div>
 
@@ -71,7 +73,7 @@ export function MeetingRow({ m, index }: { m: MeetingListItem; index: number }) 
           <span className="bg-primary/15 absolute inset-x-0 bottom-0 h-[2px]">
             <span
               className="bg-primary block h-full transition-[width] duration-700"
-              style={{ width: `${Math.max(4, Math.round((m.progress_pct ?? 0) * 100))}%` }}
+              style={{ width: `${Math.max(4, Math.round(m.progress_pct))}%` }}
             />
           </span>
         )}
