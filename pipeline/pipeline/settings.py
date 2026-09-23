@@ -20,3 +20,7 @@ class PipelineSettings(BaseSettings):
     stt_device: Literal["cpu", "cuda"] = "cpu"
     stt_compute_type: str = "int8"
     stt_cpu_threads: int = Field(default=4, ge=1)
+    diarization_model_dir: Path = ROOT / "pipeline" / ".models" / "diarization"
+    diarization_num_speakers: int | None = Field(default=None, ge=1, le=50)
+    diarization_threshold: float = Field(default=0.5, gt=0.0, lt=2.0)
+    diarization_cpu_threads: int = Field(default=4, ge=1, le=32)

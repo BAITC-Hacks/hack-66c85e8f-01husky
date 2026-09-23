@@ -1,8 +1,8 @@
 # Локальный backend с PostgreSQL и Whisper (macOS)
 
-Проверено на Apple M4, Python 3.12. Это этап STT: настоящая транскрипция через
-HTTP → Redis → Celery → Whisper → PostgreSQL. Бот разрабатывается другим участником.
-Frontend в этой ветке отсутствует; ниже — API для подключения его отдельно.
+Проверено на Apple M4, Python 3.12. Настоящая транскрипция и диаризация через
+HTTP → Redis → Celery → Whisper + sherpa-onnx → PostgreSQL. Бот разрабатывается другим участником.
+Frontend подтянут из develop; запускается отдельно, ниже — API для его подключения.
 
 ## Установка и запуск
 
@@ -24,6 +24,7 @@ backend/.venv/bin/python scripts/local_dev.py setup
 
 ```bash
 uv run --project backend --extra stt --env-file .env env HF_HUB_OFFLINE=0 python -m pipeline.download_model
+backend/.venv/bin/python -m pipeline.download_diarization_models
 ```
 
 Если `large-v3-turbo` уже есть в `pipeline/.models/`, повторно скачивать не нужно.
@@ -92,10 +93,13 @@ PostgreSQL: `127.0.0.1:5432`, база/пользователь `protocol`, па
 Аудио лежит на диске в `backend/data/audio`, а не в PostgreSQL; модель — в
 `pipeline/.models`. Эти каталоги и `.env` не должны попадать в Git/образ Docker.
 
-Сейчас `PIPELINE_FAKE=0` возвращает реальный текст и таймкоды. Диаризация, voiceprint,
-извлечение поручений и summary **ещё не реализованы**: `SPEAKER_UNKNOWN`, пустые
-`speaker_map`, `tasks`, `summary`; `model_info` содержит `unavailable` для этих этапов.
-`draft` означает окончание текущего STT-этапа, а не готовность полного протокола.
+Сейчас `PIPELINE_FAKE=0` возвращает реальный текст, таймкоды и акустические группы
+`speaker1`, `speaker2`, … по порядку первого появления. Реплика делится по таймкодам
+слов, если внутри неё меняется голос. `speaker_map` сохраняется с `participant_id=null`
+и `source=none`: реальные имена не угадываются. Voiceprint-идентификация человека,
+извлечение поручений и summary ещё не реализованы; `tasks` и `summary` пусты.
+`draft` означает окончание STT/диаризации, а не готовность полного протокола.
+Настройки, ограничения и модели: [локальная диаризация](local-diarization.md).
 Язык файла из Whisper — только подсказка, поэтому язык сегментов пока `other`.
 Качество русского/казахского/смешанного текста требует ручной проверки.
 
@@ -112,7 +116,7 @@ STT не использует облачные API; LLM пока не вызыв
 backend/.venv/bin/python -m pytest pipeline/tests -q
 uv run --project backend --extra stt --env-file .env python -m pytest backend/tests -q
 uv run --project backend --extra stt --env-file .env python backend/scripts/smoke_backend.py
-backend/.venv/bin/python scripts/smoke_local_stt.py "pipeline/recordings/Совещание №1.mp3"
+backend/.venv/bin/python scripts/smoke_local_stt.py "pipeline/recordings/Совещание №2.mp3" --min-speakers 2
 ```
 
 Первые три команды проверяют код с подменами ML. Backend pytest использует отдельную
@@ -121,10 +125,15 @@ backend/.venv/bin/python scripts/smoke_local_stt.py "pipeline/recordings/Сов�
 настоящий Whisper, очередь и dev-базу: **создаёт и оставляет встречу** для проверки UI.
 Запись не поставляется в Git, путь замените на свою запись с согласия участников.
 
-Проверено 23.09.2026: 67 backend-тестов, 19 pipeline-тестов, HTTP smoke с DOCX/PDF.
+Историческая проверка STT-этапа 23.09.2026: 67 backend-тестов, 19 pipeline-тестов, HTTP smoke с DOCX/PDF.
 «Совещание №1» (274 секунды) прошло через настоящую очередь; в dev-базе создана
 встреча №1, статус `draft`, 47 сохранённых сегментов. Это проверка интеграции,
 не оценка точности STT.
+
+После добавления диаризации: 78 backend-тестов и 28 pipeline-тестов прошли.
+Запись №2 (206 секунд) сохранена как встреча №2: 94 фрагмента, `speaker1`–`speaker6`.
+Первое тестовое совещание удалено из рабочей БД по просьбе пользователя, с локальной
+резервной копией. Число голосов — оценка модели, не подтверждённая разметка.
 
 Дополнительно настоящая кешированная модель проверена на трёх секундах тишины
 (пустой транскрипт) и повреждённом файле (безопасная ошибка) с запрещёнными
