@@ -1,4 +1,4 @@
-# Демонстрационный протокол
+# Kenes AI: демонстрационный протокол
 
 [PDF](protocol.pdf) · [DOCX](protocol.docx) · [README проекта](../../README.md)
 

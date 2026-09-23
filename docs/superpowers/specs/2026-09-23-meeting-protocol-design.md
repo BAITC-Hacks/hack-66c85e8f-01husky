@@ -1,4 +1,6 @@
-# Система автопротоколирования совещаний с фиксацией поручений: design spec
+# Kenes AI: система автопротоколирования совещаний
+
+Рабочее название проекта: **Kenes AI**.
 
 Дата: 2026-09-23. Статус: approved, ready for implementation.
 Репозиторий: https://github.com/BAITC-Hacks/hack-66c85e8f-01husky
