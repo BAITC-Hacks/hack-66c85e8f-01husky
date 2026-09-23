@@ -1,6 +1,6 @@
-"""In-app notifications. Idempotent per (user_id, task_id, kind) via the DB unique constraint."""
+"""In-app notifications with transaction-safe deduplication, including meeting events."""
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from app.models import Notification, Participant, Task
@@ -25,6 +25,14 @@ def create(
     title: str | None = None,
 ) -> Notification | None:
     """Returns the created notification, or None if an identical one already exists."""
+    kind = NotificationKind(kind)
+    # Hold through commit/rollback so a concurrent request sees the committed result.
+    # Meeting-scoped events have task_id=NULL, which the unique constraint cannot dedupe.
+    scope = f"task:{task_id}" if task_id is not None else f"meeting:{meeting_id}"
+    db.execute(
+        text("SELECT pg_advisory_xact_lock(hashtextextended(current_schema() || :key, 0))"),
+        {"key": f":notification:{user_id}:{kind.value}:{scope}"},
+    )
     exists = db.scalar(
         select(Notification.id).where(
             Notification.user_id == user_id,
