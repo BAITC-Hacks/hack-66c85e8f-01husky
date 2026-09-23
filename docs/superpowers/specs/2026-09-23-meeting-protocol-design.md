@@ -267,7 +267,7 @@ Celery:
 
 Каждый работает только в своей папке. Стык: раздел 5 (pipeline ↔ backend) и раздел 7 (backend ↔ frontend, bots ↔ backend).
 
-### Эмир: `frontend/`
+### Эмир: `frontend/` (полностью сам: каркас, типы из `/openapi.json`, Dockerfile, сервис в compose)
 Вход: раздел 7 (API) и раздел 8 (экраны). До готовности бэка: `pnpm mock` поднимает msw/json-server с фикстурами из `frontend/mocks/`, повторяющими схемы раздела 7.
 Готово, когда: все 8 экранов работают против реального бэка, сценарий «загрузить файл → увидеть черновик → поправить спикера → подтвердить → скачать PDF → увидеть задачу на дашборде → получить уведомление» проходит без перезагрузки.
 
@@ -283,7 +283,7 @@ Celery:
 Готово, когда: cli на реальной записи даёт верных спикеров, поручения с верными датами и ответственными; `pytest` на `fake` и на unit-нормализации дат зелёный; бот записывает 1 минуту Meet и загружает файл.
 
 ### Camille (агент): каркас
-Скаффолд репо: структура папок, `pipeline/models.py` с контрактом, `pipeline/fake.py`, `backend` с моделями и Alembic-миграцией 0001, пустые роутеры со схемами, `frontend` с Next.js + Tailwind + next-intl + типами API, `docker-compose.yml`, `.env.example`, README-заготовка. После скаффолда: интеграция стыков, README, ревью.
+Скаффолд репо: структура папок, `pipeline/models.py` с контрактом, `pipeline/fake.py`, `backend` с моделями и Alembic-миграцией 0001, пустые роутеры со схемами, `docker-compose.yml`, `.env.example`, README-заготовка. После скаффолда: интеграция стыков, README, ревью.
 
 ## 10. Конвенции
 
@@ -292,6 +292,7 @@ Celery:
 - Коммиты: Conventional Commits (`feat(backend): ...`, `fix(pipeline): ...`, `spec: ...`).
 - Python: ruff + ruff format, type hints обязательны, pydantic v2. TS: eslint + prettier, strict.
 - Секреты только в `.env` (gitignored). `.env.example` с локальными значениями по умолчанию.
+- CI только локально: `./scripts/check.sh` перед PR, GitHub Actions в репозитории хакатона не включаем.
 - Тесты: backend pytest + httpx; pipeline pytest на fake и на чистые функции; frontend минимум vitest на утилиты.
 - Никаких внешних вызовов из кода по умолчанию. Любой облачный провайдер за флагом.
 
