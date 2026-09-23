@@ -22,7 +22,8 @@ def health() -> dict[str, str | bool]:
 
 
 # Routers register here as they land. Keep alphabetical.
-# from app.routers import auth, directions, meetings, notifications, participants, tasks
-# api.include_router(auth.router)
+from app.routers import auth
+
+api.include_router(auth.router)
 
 app.include_router(api)
