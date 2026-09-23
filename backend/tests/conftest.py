@@ -1,7 +1,9 @@
 import os
 
 os.environ["PIPELINE_FAKE"] = "1"
-os.environ["DATABASE_URL"] = "postgresql+psycopg://protocol:protocol@localhost:5432/protocol_test"
+os.environ["DATABASE_URL"] = os.getenv(
+    "TEST_DATABASE_URL", "postgresql+psycopg://protocol:protocol@localhost:5432/protocol_test"
+)
 os.environ["SECRET_KEY"] = "test-secret"
 
 import pytest

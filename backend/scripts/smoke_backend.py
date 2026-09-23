@@ -23,6 +23,123 @@ from sqlalchemy.engine import make_url
 BACKEND = Path(__file__).resolve().parents[1]
 
 
+def exercise_api(api: str, work: Path) -> dict:
+    """Create synthetic test data in the explicitly supplied development API."""
+    cookie = str(work / "cookie")
+
+    def curl(path, *args):
+        result = subprocess.run(
+            [
+                "curl",
+                "-sS",
+                "--fail-with-body",
+                "-b",
+                cookie,
+                "-c",
+                cookie,
+                *args,
+                api + path,
+            ],
+            capture_output=True,
+            check=False,
+            timeout=150,
+        )
+        if result.returncode:
+            raise RuntimeError(f"{path}: {result.stdout.decode(errors='replace')}")
+        return result.stdout
+
+    def request(path, body, method="POST"):
+        return json.loads(
+            curl(
+                path,
+                "-X",
+                method,
+                "-H",
+                "Content-Type: application/json",
+                "-d",
+                json.dumps(body, ensure_ascii=False),
+            )
+        )
+
+    user = request(
+        "/auth/register",
+        {
+            "email": f"smoke-{uuid4().hex}@example.com",
+            "password": "smoke-test-pass",
+            "name": "Дана",
+        },
+    )
+    chair = request("/participants", {"name": "Серик"})
+    aibek = request("/participants", {"name": "Айбек"})
+    audio = work / "fixture.wav"
+    with wave.open(str(audio), "wb") as wav:
+        wav.setnchannels(1)
+        wav.setsampwidth(2)
+        wav.setframerate(16000)
+        wav.writeframes(b"\0\0" * 16000)
+    meeting = json.loads(
+        curl(
+            "/meetings",
+            "-F",
+            "title=Проверка полного сценария",
+            "-F",
+            "meeting_date=2026-09-23",
+            "-F",
+            f"participant_ids={user['participant_id']}",
+            "-F",
+            f"participant_ids={chair['id']}",
+            "-F",
+            f"participant_ids={aibek['id']}",
+            "-F",
+            f"file=@{audio}",
+        )
+    )
+    mid = meeting["id"]
+    for _ in range(120):
+        detail = json.loads(curl(f"/meetings/{mid}"))
+        if detail["status"] in {"draft", "failed"}:
+            break
+        time.sleep(0.5)
+    assert detail["status"] == "draft", detail
+    assert len(detail["tasks"]) == 4
+    request(
+        f"/meetings/{mid}/speakers",
+        [
+            {"speaker": "SPEAKER_00", "participant_id": chair["id"]},
+            {"speaker": "SPEAKER_01", "participant_id": user["participant_id"]},
+        ],
+        "PUT",
+    )
+    confirmed = request(f"/meetings/{mid}/confirm", {})
+    assert confirmed["status"] == "confirmed"
+    tasks = json.loads(curl("/tasks?mine=1"))
+    assert tasks
+    tid = tasks[0]["id"]
+    request(f"/tasks/{tid}", {"status": "in_progress"}, "PATCH")
+    done = request(f"/tasks/{tid}", {"status": "done"}, "PATCH")
+    assert done["status"] == "done"
+    notifications = json.loads(curl("/notifications?unread=1"))
+    assert {"assigned", "protocol_ready"} <= {n["kind"] for n in notifications}
+    request("/notifications/read-all", {})
+    assert json.loads(curl("/notifications?unread=1")) == []
+    docx = curl(f"/meetings/{mid}/export?format=docx&lang=kk")
+    pdf = curl(f"/meetings/{mid}/export?format=pdf&lang=ru")
+    assert docx.startswith(b"PK") and pdf.startswith(b"%PDF-")
+    sed = request(f"/meetings/{mid}/sed", {})
+    assert sed == request(f"/meetings/{mid}/sed", {})
+    curl(f"/meetings/{mid}/audio", "-X", "DELETE")
+    retained = json.loads(curl(f"/meetings/{mid}"))
+    assert retained["audio_path"] is None and retained["segments"]
+    return {
+        "status": "passed",
+        "tasks": len(detail["tasks"]),
+        "notifications": len(notifications),
+        "docx_bytes": len(docx),
+        "pdf_bytes": len(pdf),
+        "sed_ref": sed["sed_ref"],
+    }
+
+
 def run(database_url: str) -> dict:
     url = make_url(database_url)
     if not url.database or not url.database.endswith("_test"):
@@ -63,7 +180,6 @@ def run(database_url: str) -> dict:
                 probe.bind(("127.0.0.1", 0))
                 port = probe.getsockname()[1]
             api = f"http://127.0.0.1:{port}/api/v1"
-            cookie = str(work / "cookie")
             with (work / "server.log").open("w") as log:
                 server = subprocess.Popen(
                     [
@@ -97,112 +213,7 @@ def run(database_url: str) -> dict:
                     else:
                         raise RuntimeError("API did not start")
 
-                    def curl(path, *args):
-                        result = subprocess.run(
-                            [
-                                "curl",
-                                "-sS",
-                                "--fail-with-body",
-                                "-b",
-                                cookie,
-                                "-c",
-                                cookie,
-                                *args,
-                                api + path,
-                            ],
-                            capture_output=True,
-                            check=False,
-                            timeout=150,
-                        )
-                        if result.returncode:
-                            raise RuntimeError(f"{path}: {result.stdout.decode(errors='replace')}")
-                        return result.stdout
-
-                    def request(path, body, method="POST"):
-                        return json.loads(
-                            curl(
-                                path,
-                                "-X",
-                                method,
-                                "-H",
-                                "Content-Type: application/json",
-                                "-d",
-                                json.dumps(body, ensure_ascii=False),
-                            )
-                        )
-
-                    user = request(
-                        "/auth/register",
-                        {
-                            "email": "smoke@example.com",
-                            "password": "smoke-test-pass",
-                            "name": "Дана",
-                        },
-                    )
-                    chair = request("/participants", {"name": "Серик"})
-                    aibek = request("/participants", {"name": "Айбек"})
-                    audio = work / "fixture.wav"
-                    with wave.open(str(audio), "wb") as wav:
-                        wav.setnchannels(1)
-                        wav.setsampwidth(2)
-                        wav.setframerate(16000)
-                        wav.writeframes(b"\0\0" * 16000)
-                    meeting = json.loads(
-                        curl(
-                            "/meetings",
-                            "-F",
-                            "title=Проверка полного сценария",
-                            "-F",
-                            "meeting_date=2026-09-23",
-                            "-F",
-                            f"participant_ids={user['participant_id']}",
-                            "-F",
-                            f"participant_ids={chair['id']}",
-                            "-F",
-                            f"participant_ids={aibek['id']}",
-                            "-F",
-                            f"file=@{audio}",
-                        )
-                    )
-                    mid = meeting["id"]
-                    detail = json.loads(curl(f"/meetings/{mid}"))
-                    assert detail["status"] == "draft" and len(detail["tasks"]) == 4
-                    request(
-                        f"/meetings/{mid}/speakers",
-                        [
-                            {"speaker": "SPEAKER_00", "participant_id": chair["id"]},
-                            {"speaker": "SPEAKER_01", "participant_id": user["participant_id"]},
-                        ],
-                        "PUT",
-                    )
-                    confirmed = request(f"/meetings/{mid}/confirm", {})
-                    assert confirmed["status"] == "confirmed"
-                    tasks = json.loads(curl("/tasks?mine=1"))
-                    assert tasks
-                    tid = tasks[0]["id"]
-                    request(f"/tasks/{tid}", {"status": "in_progress"}, "PATCH")
-                    done = request(f"/tasks/{tid}", {"status": "done"}, "PATCH")
-                    assert done["status"] == "done"
-                    notifications = json.loads(curl("/notifications?unread=1"))
-                    assert {"assigned", "protocol_ready"} <= {n["kind"] for n in notifications}
-                    request("/notifications/read-all", {})
-                    assert json.loads(curl("/notifications?unread=1")) == []
-                    docx = curl(f"/meetings/{mid}/export?format=docx&lang=kk")
-                    pdf = curl(f"/meetings/{mid}/export?format=pdf&lang=ru")
-                    assert docx.startswith(b"PK") and pdf.startswith(b"%PDF-")
-                    sed = request(f"/meetings/{mid}/sed", {})
-                    assert sed == request(f"/meetings/{mid}/sed", {})
-                    curl(f"/meetings/{mid}/audio", "-X", "DELETE")
-                    retained = json.loads(curl(f"/meetings/{mid}"))
-                    assert retained["audio_path"] is None and retained["segments"]
-                    return {
-                        "status": "passed",
-                        "tasks": len(detail["tasks"]),
-                        "notifications": len(notifications),
-                        "docx_bytes": len(docx),
-                        "pdf_bytes": len(pdf),
-                        "sed_ref": sed["sed_ref"],
-                    }
+                    return exercise_api(api, work)
                 finally:
                     server.terminate()
                     server.wait(timeout=10)
@@ -221,4 +232,13 @@ if __name__ == "__main__":
             "postgresql+psycopg://protocol:protocol@localhost:5432/protocol_test",
         ),
     )
-    print(json.dumps(run(parser.parse_args().database_url), ensure_ascii=False))
+    parser.add_argument(
+        "--api-url", help="Existing dev API /api/v1 URL; creates synthetic test data"
+    )
+    args = parser.parse_args()
+    if args.api_url:
+        with tempfile.TemporaryDirectory(prefix="hackalem-smoke-http-") as directory:
+            result = exercise_api(args.api_url.rstrip("/"), Path(directory))
+    else:
+        result = run(args.database_url)
+    print(json.dumps(result, ensure_ascii=False))

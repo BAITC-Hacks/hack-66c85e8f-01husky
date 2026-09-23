@@ -1,0 +1,48 @@
+name: Compose integration
+
+on:
+  push:
+    branches: [nikita, develop]
+  pull_request:
+    branches: [develop, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: compose-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Start clean development stack
+        run: |
+          cp .env.example .env
+          docker compose config --quiet
+          docker compose up -d --build --wait --wait-timeout 240
+      - name: Prepare isolated test database and development dependencies
+        run: |
+          docker compose exec -T postgres psql -U protocol -d protocol -v ON_ERROR_STOP=1 -c 'CREATE DATABASE protocol_test OWNER protocol'
+          docker compose exec -T api uv sync --locked --dev
+      - name: Backend checks and pipeline contract tests
+        run: |
+          docker compose exec -T api uv run --no-sync ruff check .
+          docker compose exec -T -e TEST_DATABASE_URL=postgresql+psycopg://protocol:protocol@postgres:5432/protocol_test api uv run --no-sync pytest -q
+          docker compose exec -T api uv run --no-sync pytest ../pipeline/tests -q
+      - name: Exercise HTTP API through the real Redis and Celery worker
+        run: |
+          docker compose exec -T api uv run --no-sync python scripts/smoke_backend.py --api-url http://api:8000/api/v1
+          curl --fail --silent --show-error --location --retry 10 --retry-connrefused --retry-delay 2 http://localhost:3000/login > /dev/null
+      - name: Diagnostics
+        if: always()
+        run: |
+          docker compose ps
+          docker compose logs --no-color --tail 150
+      - name: Remove stack and test data
+        if: always()
+        run: docker compose down --volumes
