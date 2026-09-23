@@ -1,23 +1,41 @@
-# pipeline
+# Kenes AI: pipeline
 
-Чистая библиотека: аудио → `MeetingResult`. Контракт: `pipeline/models.py` (спека, раздел 5).
+Библиотека без веб-сервера и БД: аудиозапись → `MeetingResult` (сегменты, карта спикеров, поручения, саммари). Backend вызывает одну функцию:
+
+```python
+process(audio_path, meeting_date, participants, directions, output_language, progress) -> MeetingResult
+```
+
+Контракт описан в [`pipeline/models.py`](pipeline/models.py) и в разделе 5 [спецификации](../docs/superpowers/specs/2026-09-23-meeting-protocol-design.md). Все модели работают локально, аудио и текст не покидают машину.
+
+[Главный README](../README.md) · [Локальный запуск с API](../docs/local-development.md) · [Диаризация](../docs/local-diarization.md)
+
+## Этапы
+
+| Этап | Реализация | Статус |
+|---|---|---|
+| Распознавание речи | faster-whisper `large-v3-turbo`, CPU int8, строго offline | ✅ работает |
+| Диаризация | sherpa-onnx: pyannote segmentation 3.0 + NeMo TitaNet-large, слова распределяются по голосам | ✅ работает, метки `speaker1`, `speaker2`, … |
+| Маскирование | Шаблоны телефонов и ИИН в тексте | ✅ работает |
+| Язык каждой реплики | Разметка `ru` / `kk` / `mixed` | 🔜 сейчас `lang=other` |
+| Поручения и саммари | Локальная LLM (Qwen3 через Ollama) | 🔜 в fake-режиме |
+| Узнавание по голосу | Сравнение с голосовым эталоном участника | 🔜 в fake-режиме |
+
+`PIPELINE_FAKE=1` подключает [`fake.py`](pipeline/fake.py): детерминированный результат с поручениями и саммари, чтобы backend и frontend работали без моделей. `PIPELINE_FAKE=0` подключает [`real.py`](pipeline/real.py). Имена участников реальный режим не угадывает: `speaker_map.participant_id=null`, привязку делает секретарь.
+
+## Быстрый старт
 
 ```bash
 cd pipeline
-uv sync                      # контракт + настройки
-uv sync --extra stt          # + локальный Whisper и sherpa-onnx
-uv sync --extra ml           # + whisper, pyannote, speechbrain
+uv sync                      # только контракт и настройки
+uv sync --extra stt          # + faster-whisper и sherpa-onnx
 uv run pytest
 PIPELINE_FAKE=1 uv run python -m pipeline.cli sample.wav --date 2026-09-23
 ```
 
-`PIPELINE_FAKE=1` → `fake.py`. Иначе `real.py` (владелец: Ардак).
-
 ## Локальная транскрипция Whisper
 
 `transcribe_local.py` и backend используют общий провайдер `pipeline/stt/local_whisper.py`. Аудио не отправляется в облако. Транскрипция всегда offline: веса должны быть подготовлены заранее, иначе будет ошибка. `--offline` оставлен для совместимости.
-
-При `PIPELINE_FAKE=0` работают STT и локальная акустическая диаризация: метки `speaker1`, `speaker2`, …, слова распределяются по голосам. Поручения, саммари и voiceprint-идентификация пока не реализованы; имена не угадываются, `speaker_map.participant_id=null`. Общий язык файла не считается языком каждой реплики; сегменты пока имеют `lang=other`.
 
 ### Установка минимального окружения
 
@@ -63,5 +81,5 @@ PIPELINE_FAKE=0 .venv/bin/python -m pipeline.cli recordings/meeting.m4a --date 2
 [Запуск с PostgreSQL, Redis, Celery и API](../docs/local-development.md).
 
 [Модели, настройки и ограничения диаризации](../docs/local-diarization.md).
-`transcribe_local.py` остаётся STT-only утилитой сравнения языков; backend и `pipeline.cli`
-вызывают полный процесс с разделением по голосам. Веса не скачиваются во время обработки.
+
+`transcribe_local.py` — утилита только для STT, чтобы сравнивать языковые режимы. Backend и `pipeline.cli` запускают полный процесс с разделением по голосам. Во время обработки веса не скачиваются.

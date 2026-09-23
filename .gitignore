@@ -13,3 +13,4 @@ backend/outbox/
 bots/recordings/
 bots/.browser-state/
 bots/test-results/
+docker-compose.override.yml

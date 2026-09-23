@@ -84,5 +84,38 @@ export function formatBytes(n: number): string {
 export const URGENCY_ORDER: Urgency[] = ["low", "normal", "high", "critical"];
 export const TASK_STATUSES: TaskStatus[] = ["draft", "confirmed", "in_progress", "done", "overdue"];
 
+/** Statuses a task may be moved to from the dashboard (spec §6). Includes `from` itself. */
+export function allowedStatuses(from: TaskStatus): TaskStatus[] {
+  if (from === "draft") return ["draft"];
+  if (from === "overdue") return ["overdue", "in_progress", "done"];
+  return ["confirmed", "in_progress", "done"];
+}
+
+export type DeadlineBucket = "overdue" | "today" | "tomorrow" | "week" | "later" | "none" | "done";
+export const DEADLINE_BUCKETS: DeadlineBucket[] = [
+  "overdue",
+  "today",
+  "tomorrow",
+  "week",
+  "later",
+  "none",
+  "done",
+];
+
+/** Groups a task for the agenda view: done last, overdue first, then by days left. */
+export function deadlineBucket(
+  deadline: string | null,
+  status: TaskStatus,
+  today: string = toISODate(new Date()),
+): DeadlineBucket {
+  if (status === "done") return "done";
+  const { days, tone } = deadlineInfo(deadline, status, today);
+  if (tone === "overdue") return "overdue";
+  if (days === null) return "none";
+  if (days === 0) return "today";
+  if (days === 1) return "tomorrow";
+  return days <= 7 ? "week" : "later";
+}
+
 /** Confidence under this is flagged for the secretary (spec §12: "LLM выдумывает"). */
 export const LOW_CONFIDENCE = 0.7;
