@@ -282,6 +282,18 @@ cd bots && uv run pytest              # контракт CLI и жизненны
 
 Тесты бэкенда используют `PIPELINE_FAKE=1` и `CELERY_EAGER=1`: пайплайн подменяется детерминированной заглушкой, Celery-задачи выполняются в процессе без Redis.
 
+### Проверка контейнеров и очереди
+
+[Compose integration](.github/workflows/compose-check.yml) запускает чистый Compose, создаёт отдельную тестовую БД, выполняет тесты и HTTP-сценарий через Redis и отдельный Celery worker. Используется `PIPELINE_FAKE=1`, аудио генерируется скриптом. Для ручного повторения доступны команды из workflow. Проверка frontend добавляется после интеграции приложения Эмира.
+
+```bash
+gh workflow run compose-check.yml --ref nikita
+# На запущенном тестовом Compose, создаёт синтетические данные:
+docker compose exec -T api uv run --no-sync python scripts/smoke_backend.py --api-url http://api:8000/api/v1
+```
+
+На 2026-09-23 [первый запуск CI](https://github.com/BAITC-Hacks/hack-66c85e8f-01husky/actions/runs/35845323376) заблокирован GitHub до выполнения шагов из-за billing issue аккаунта. Локальная машина не имеет Docker. Для подтверждения контейнерного запуска нужен успешный прогон на Docker-host или повторный запуск Actions после восстановления биллинга.
+
 ## Статус реализации
 
 Честная карта того, что работает сегодня и что в работе:
@@ -293,7 +305,7 @@ cd bots && uv run pytest              # контракт CLI и жизненны
 | Реальный пайплайн (`pipeline/real.py`: whisper, pyannote, voiceprint, LLM-агент, саммари, privacy) | в работе; до его появления `pipeline.cli` без `PIPELINE_FAKE=1` завершается `NotImplementedError` |
 | Фронтенд | отдельное Next.js-приложение, в работе |
 | Бот Meet / Zoom / Teams | жизненный цикл, запись, загрузка и CLI-контракт готовы; адаптеры селекторов web-клиентов в работе |
-| Docker Compose | описан и собирается; на машине разработки проверялся локальный запуск без Docker |
+| Docker Compose | конфигурация и CI добавлены; сборка и запуск контейнеров пока не подтверждены |
 
 ## Структура репозитория
 
