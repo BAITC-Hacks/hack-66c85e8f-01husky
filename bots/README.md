@@ -2,7 +2,7 @@
 
 Гостевые адаптеры Google Meet, Zoom и Microsoft Teams через Playwright. Владелец: агент B / Никита. Организатор допускает `Kenes AI` из комнаты ожидания.
 
-**Статус:** адаптеры, запись, очистка ресурсов и callback реализованы; живой вход Teams подтверждён, запись с callback и вход Meet/Zoom ещё не подтверждены. [Отчёт о доступе и Fireflies](../docs/meeting-bot-access.md).
+**Статус:** живой вход Teams подтверждён. Контрольная речь из Chromium записана в Linux-контейнере и обработана настоящим backend с Whisper и диаризацией. Запись живого звонка и вход Meet/Zoom ещё не подтверждены. [Отчёт о доступе и Fireflies](../docs/meeting-bot-access.md).
 
 ## Запуск
 
@@ -14,6 +14,8 @@ docker compose up -d --build api worker bot-worker
 ```
 
 Образ `backend/Dockerfile:bot-runtime` содержит Chromium, ffmpeg, PulseAudio и Xvfb. Запускается от непривилегированного пользователя; Chromium работает с виртуальным экраном Xvfb (`--headed`), без окна на компьютере пользователя. Один worker обрабатывает одну встречу; его PulseAudio sink изолирован внутри контейнера. Не увеличивать concurrency и не подключать общий аудиосервер между контейнерами.
+
+Compose подключает [профиль seccomp Playwright](runtime/README.md), необходимый для namespace sandbox Chromium. Профиль применяется только к bot-worker; запуск остаётся непривилегированным.
 
 | Переменная | По умолчанию | Назначение |
 |---|---|---|
@@ -57,4 +59,6 @@ docker compose run --rm --no-deps bot-worker \
   uv run --no-sync python /app/bots/scripts/audio_smoke.py
 ```
 
-Она должна записать тон из Chromium через PulseAudio в WAV 16 kHz mono, проверить слышимость и удалить временные файлы. Ошибка либо отсутствие runtime не считаются успешной проверкой. Контейнерный прогон пока не подтверждён.
+Она записывает тон из Chromium через PulseAudio в WAV 16 kHz mono, проверяет слышимость и удаляет временные файлы. Ошибка либо отсутствие runtime не считаются успешной проверкой. Прогон через Compose с профилем seccomp прошёл 23 сентября 2026: частота 439.9 Hz, RMS 0.1415.
+
+Отдельная контрольная речь, записанная в headed Chromium через тот же аудиотракт, прошла HTTP callback → настоящий Whisper large-v3-turbo → sherpa-onnx diarization → сохранение `draft`: три фразы, один спикер, смысл сохранён. Повторный callback вернул 409. Backend работал с `PIPELINE_FAKE=0` и `CELERY_EAGER=1`; эта проверка не подтверждает доставку через Redis или запись внешней встречи.
