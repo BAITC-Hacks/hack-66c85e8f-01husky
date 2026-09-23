@@ -200,6 +200,7 @@ export default function NewMeetingPage() {
                     {
                       title: v.title,
                       meeting_date: v.meeting_date,
+                      output_language: v.output_language,
                       participant_ids: v.participant_ids,
                       platform,
                       url,

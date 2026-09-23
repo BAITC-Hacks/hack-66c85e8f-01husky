@@ -24,7 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDirections } from "@/lib/api/queries/directions";
 import { useMeeting, useMeetingAction } from "@/lib/api/queries/meetings";
 import { useParticipants } from "@/lib/api/queries/participants";
-import type { Task } from "@/lib/api/types";
+import { hasAudio, type Task } from "@/lib/api/types";
 import { formatDate, formatDuration } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -65,8 +65,8 @@ export default function MeetingPage() {
   }, []);
 
   const onQuote = (task: Task) => {
-    if (task.segment_idx < 0) return;
-    setFocus({ idx: task.segment_idx, quote: task.quote, nonce: Date.now() });
+    if (task.segment_idx == null || task.segment_idx < 0) return;
+    setFocus({ idx: task.segment_idx, quote: task.quote ?? undefined, nonce: Date.now() });
     if (!isDesktop()) setTab("transcript");
   };
   const onTaskClick = (taskId: number) => {
@@ -96,7 +96,7 @@ export default function MeetingPage() {
     return <QueryError error={error} notFound="meetingNotFound" onRetry={() => refetch()} />;
   }
 
-  const m = data.meeting;
+  const m = data;
   const busy = m.status === "processing" || m.status === "uploaded";
   const isDraft = m.status === "draft";
   const hasContent = !busy && m.status !== "failed";
@@ -177,7 +177,7 @@ export default function MeetingPage() {
             <p className="font-heading text-lg font-semibold">{t("failed")}</p>
             <p className="text-muted-foreground font-mono text-sm">{m.error}</p>
           </div>
-          {m.has_audio && (
+          {hasAudio(m) && (
             <Button variant="outline" onClick={() => reprocess.mutate()} disabled={reprocess.isPending}>
               <RefreshCcw /> {t("actions.reprocess")}
             </Button>

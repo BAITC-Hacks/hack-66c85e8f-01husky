@@ -19,7 +19,7 @@ import { useDirections } from "@/lib/api/queries/directions";
 import { useMeetings } from "@/lib/api/queries/meetings";
 import { useParticipants } from "@/lib/api/queries/participants";
 import { useTasks, useTaskStats, useUpdateTask } from "@/lib/api/queries/tasks";
-import type { TaskFilters, TaskStats, TaskStatus, Urgency } from "@/lib/api/types";
+import type { Task, TaskFilters, TaskStats, TaskStatus, Urgency } from "@/lib/api/types";
 import { deadlineInfo, TASK_STATUSES, URGENCY_ORDER } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -103,7 +103,8 @@ export default function TasksPage() {
   );
 
   const pName = (id: number | null) => participants.find((p) => p.id === id)?.name;
-  const dName = (id: number) => directions.find((d) => d.id === id)?.name ?? "—";
+  const dName = (task: Task) =>
+    task.direction_name ?? directions.find((d) => d.id === task.direction_id)?.name ?? "—";
   const hasFilters = Object.values(filters).some((v) => v !== undefined && v !== false) || dueSoon;
 
   const onCounter = (key: CounterKey) => {
@@ -251,7 +252,7 @@ export default function TasksPage() {
                     <DeadlineLabel deadline={task.deadline} status={task.status} />
                   </div>
                   <div className="mt-3 flex items-center justify-between gap-2 border-t pt-3">
-                    <span className="text-muted-foreground truncate text-xs">{dName(task.direction_id)}</span>
+                    <span className="text-muted-foreground truncate text-xs">{dName(task)}</span>
                     <StatusSelect
                       value={task.status}
                       disabled={update.isPending}
@@ -315,9 +316,7 @@ export default function TasksPage() {
                       <TableCell>
                         <UrgencyMark urgency={task.urgency} />
                       </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {dName(task.direction_id)}
-                      </TableCell>
+                      <TableCell className="text-muted-foreground text-sm">{dName(task)}</TableCell>
                       <TableCell>
                         <StatusSelect
                           value={task.status}

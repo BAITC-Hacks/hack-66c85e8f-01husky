@@ -27,7 +27,7 @@ import {
 import { useNotify } from "@/hooks/use-notify";
 import { downloadFile } from "@/lib/api/download";
 import { useDeleteAudio, useDeleteMeeting, useMeetingAction, useSendToSed } from "@/lib/api/queries/meetings";
-import type { ExportFormat, Locale, Meeting } from "@/lib/api/types";
+import { hasAudio, type ExportFormat, type Locale, type Meeting } from "@/lib/api/types";
 import { ConfirmAction } from "./confirm-action";
 
 type Dialog = "confirm" | "reprocess" | "audio" | "delete" | null;
@@ -122,10 +122,10 @@ export function ActionsBar({ meeting, onConfirmed }: { meeting: Meeting; onConfi
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuItem disabled={busy || !meeting.has_audio} onClick={() => setDialog("reprocess")}>
+          <DropdownMenuItem disabled={busy || !hasAudio(meeting)} onClick={() => setDialog("reprocess")}>
             <RefreshCcw /> {t("reprocess")}
           </DropdownMenuItem>
-          <DropdownMenuItem disabled={!meeting.has_audio} onClick={() => setDialog("audio")}>
+          <DropdownMenuItem disabled={!hasAudio(meeting)} onClick={() => setDialog("audio")}>
             <VolumeX /> {t("deleteAudio")}
           </DropdownMenuItem>
           <DropdownMenuSeparator />

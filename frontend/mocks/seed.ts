@@ -2,16 +2,8 @@
  * Demo fixtures mirroring spec §6/§7 shapes. Dates are relative to "today" so
  * deadlines, overdue and due-soon states always look alive during a demo.
  */
-import type {
-  Direction,
-  Meeting,
-  Notification,
-  Participant,
-  Segment,
-  SpeakerMapping,
-  Task,
-  User,
-} from "@/lib/api/types";
+import type { Direction, Participant, Segment, SpeakerMapping } from "@/lib/api/types";
+import type { MeetingRow, NotificationRow, TaskRow, UserRow } from "./db";
 
 const DAY = 86_400_000;
 export const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -34,7 +26,7 @@ export const MODEL_INFO = {
   llm: "qwen3:14b · ollama",
 };
 
-export const seedUsers: (User & { password: string })[] = [
+export const seedUsers: UserRow[] = [
   {
     id: 1,
     email: "admin@kenes.ai",
@@ -104,9 +96,8 @@ export const TEMPLATE_SUMMARY = `## Тема
 ## Открытые вопросы
 - Источник финансирования, если расширение превысит остаток по ИТ.`;
 
-export function buildSegments(idBase: number): Segment[] {
+export function buildSegments(): Segment[] {
   return TEMPLATE_SEGMENTS.map(([start, end, speaker, lang, text], idx) => ({
-    id: idBase + idx,
     idx,
     start,
     end,
@@ -116,7 +107,7 @@ export function buildSegments(idBase: number): Segment[] {
   }));
 }
 
-export function buildTasks(meetingId: number, meetingDate: string, idBase: number, speakerToParticipant: (i: number) => number | null): Task[] {
+export function buildTasks(meetingId: number, meetingDate: string, idBase: number, speakerToParticipant: (i: number) => number | null): TaskRow[] {
   const md = new Date(meetingDate);
   const plus = (n: number) => iso(new Date(md.getTime() + n * DAY));
   const base = {
@@ -203,10 +194,10 @@ export function buildTasks(meetingId: number, meetingDate: string, idBase: numbe
 
 const meetingBase = {
   platform: null,
-  has_audio: true,
+  audio_path: "data/audio/meeting.wav",
   output_language: "ru" as const,
-  progress_stage: null,
-  progress_pct: null,
+  progress_stage: "done",
+  progress_pct: 100,
   error: null,
   sed_ref: null,
   created_by: 1,
@@ -214,7 +205,7 @@ const meetingBase = {
   model_info: MODEL_INFO,
 };
 
-export function seedMeetings(): Meeting[] {
+export function seedMeetings(): MeetingRow[] {
   return [
     {
       ...meetingBase,
@@ -237,7 +228,7 @@ export function seedMeetings(): Meeting[] {
       duration_sec: 2710,
       status: "processing",
       progress_stage: "stt",
-      progress_pct: 0.05,
+      progress_pct: 5,
       summary: null,
       language_stats: null,
       created_at: ts(0),
@@ -280,9 +271,11 @@ export function seedMeetings(): Meeting[] {
       meeting_date: daysFromNow(-2),
       source: "bot",
       platform: "zoom",
-      has_audio: false,
+      audio_path: null,
       duration_sec: null,
       status: "failed",
+      progress_stage: "bot_joining",
+      progress_pct: 0,
       summary: null,
       language_stats: null,
       model_info: null,
@@ -323,12 +316,12 @@ export function seedSegments(): Record<number, Segment[]> {
     [70, 84, "SPEAKER_00", "kk", "Жақсы. Ержан, келісімді екі күнде жібер."],
     [84, 96, "SPEAKER_00", "ru", "Я сама подготовлю сводку по лицензиям к следующей планёрке."],
   ];
-  const mk = (rows: Seg[], base: number) =>
-    rows.map(([start, end, speaker, lang, text], idx) => ({ id: base + idx, idx, start, end, speaker, text, lang }));
-  return { 101: buildSegments(1000), 103: mk(it, 2000), 104: [] };
+  const mk = (rows: Seg[]) =>
+    rows.map(([start, end, speaker, lang, text], idx) => ({ idx, start, end, speaker, text, lang }));
+  return { 101: buildSegments(), 103: mk(it), 104: [] };
 }
 
-export function seedTasks(): Task[] {
+export function seedTasks(): TaskRow[] {
   const done = {
     sed_ref: null,
     created_at: ts(-5),
@@ -441,7 +434,7 @@ export function seedTasks(): Task[] {
   ];
 }
 
-export function seedNotifications(): Notification[] {
+export function seedNotifications(): NotificationRow[] {
   return [
     {
       id: 1,

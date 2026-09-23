@@ -79,15 +79,19 @@ export function DirectionSelect({
   onChange,
   disabled,
 }: {
-  value: number;
+  value: number | null;
   directions: Direction[];
   onChange: (id: number) => void;
   disabled?: boolean;
 }) {
   return (
-    <Select disabled={disabled} value={String(value)} onValueChange={(v) => onChange(Number(v))}>
+    <Select
+      disabled={disabled}
+      value={value == null ? "" : String(value)}
+      onValueChange={(v) => onChange(Number(v))}
+    >
       <SelectTrigger className={trigger}>
-        <SelectValue />
+        <SelectValue placeholder="—" />
       </SelectTrigger>
       <SelectContent>
         {directions

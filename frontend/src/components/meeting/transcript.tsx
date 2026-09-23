@@ -55,7 +55,8 @@ export function Transcript({
   const tasksBySeg = useMemo(() => {
     const m = new Map<number, Task[]>();
     for (const task of tasks)
-      if (task.segment_idx >= 0) m.set(task.segment_idx, [...(m.get(task.segment_idx) ?? []), task]);
+      if (task.segment_idx != null && task.segment_idx >= 0)
+        m.set(task.segment_idx, [...(m.get(task.segment_idx) ?? []), task]);
     return m;
   }, [tasks]);
 

@@ -41,7 +41,7 @@ export class MockLiveSocket {
     if (JSON.parse(data).event !== "stop") return;
     const m = db.meetings.find((x) => x.id === this.meetingId);
     if (m) {
-      m.has_audio = true;
+      m.audio_path = `data/audio/${m.id}/audio.wav`;
       m.duration_sec = Math.max(1, Math.round(this.bytes / 4000));
       startProcessing(m);
       save();

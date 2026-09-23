@@ -30,13 +30,15 @@ export function useMeeting(id: number) {
   return useQuery({
     queryKey: qk.meeting(id),
     queryFn: () => api.get<MeetingDetail>(`/meetings/${id}`),
-    refetchInterval: (q) => (q.state.data && PROCESSING.has(q.state.data.meeting.status) ? 3_000 : false),
+    refetchInterval: (q) => (q.state.data && PROCESSING.has(q.state.data.status) ? 3_000 : false),
   });
 }
 
 function useInvalidateMeeting() {
   const qc = useQueryClient();
-  return (id?: number) => {
+  return (id?: number, detail?: MeetingDetail) => {
+    // Endpoints that return the full detail seed the cache so the page updates without a refetch.
+    if (id && detail) qc.setQueryData(qk.meeting(id), detail);
     if (id) qc.invalidateQueries({ queryKey: qk.meeting(id) });
     qc.invalidateQueries({ queryKey: qk.meetingsAll });
     qc.invalidateQueries({ queryKey: qk.tasksAll });
@@ -84,8 +86,8 @@ export function useCreateBotMeeting() {
 export function usePatchMeeting(id: number) {
   const inv = useInvalidateMeeting();
   return useMutation({
-    mutationFn: (body: MeetingPatch) => api.patch<Meeting>(`/meetings/${id}`, body),
-    onSuccess: () => inv(id),
+    mutationFn: (body: MeetingPatch) => api.patch<MeetingDetail>(`/meetings/${id}`, body),
+    onSuccess: (detail) => inv(id, detail),
   });
 }
 
@@ -93,15 +95,16 @@ export function useAssignSpeakers(id: number) {
   const inv = useInvalidateMeeting();
   return useMutation({
     mutationFn: (body: SpeakerAssign[]) => api.put<MeetingDetail>(`/meetings/${id}/speakers`, body),
-    onSuccess: () => inv(id),
+    onSuccess: (detail) => inv(id, detail),
   });
 }
 
+/** `confirm` returns the full MeetingDetail, `reprocess` only the Meeting. */
 export function useMeetingAction(id: number, action: "reprocess" | "confirm") {
   const inv = useInvalidateMeeting();
   return useMutation({
-    mutationFn: () => api.post<Meeting>(`/meetings/${id}/${action}`),
-    onSuccess: () => inv(id),
+    mutationFn: () => api.post<Meeting | MeetingDetail>(`/meetings/${id}/${action}`),
+    onSuccess: (res) => inv(id, "segments" in res ? res : undefined),
   });
 }
 
