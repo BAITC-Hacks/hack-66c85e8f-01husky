@@ -16,7 +16,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="text-muted-foreground mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 text-xs sm:px-6">
               <span className="inline-flex items-center gap-2">
                 <SealMark className="text-primary size-4" />
-                Хаттама · 2026
+                Kenes AI · 2026
               </span>
               <PrivacyBadge />
             </div>

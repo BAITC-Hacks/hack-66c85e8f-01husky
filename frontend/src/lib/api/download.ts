@@ -1,11 +1,11 @@
-import { ApiError, buildUrl, transport } from "./client";
+import { ApiError, buildUrl, send } from "./client";
 
 /**
  * Download a backend file via fetch → Blob so it works with cookie auth and
  * with the in-process mocks (a plain <a href> navigation would bypass them).
  */
 export async function downloadFile(path: string, query: Record<string, string>, fallbackName: string) {
-  const res = await transport(buildUrl(path, query), { credentials: "include" });
+  const res = await send(buildUrl(path, query), { credentials: "include" });
   if (!res.ok) {
     let detail = res.statusText;
     try {

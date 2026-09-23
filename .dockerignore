@@ -12,3 +12,7 @@ frontend/.next
 bots/recordings
 bots/.browser-state
 bots/test-results
+pipeline/.models
+pipeline/recordings
+**/*.transcript.json
+**/*.transcript.md

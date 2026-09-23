@@ -8,7 +8,9 @@ BACKEND_DIR = Path(__file__).resolve().parent.parent
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=(".env", "../.env"), extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=(BACKEND_DIR.parent / ".env", BACKEND_DIR / ".env"), extra="ignore"
+    )
 
     app_name: str = "Meeting Protocol API"
     organization_name: str = ""
@@ -23,7 +25,7 @@ class Settings(BaseSettings):
     data_dir: Path = BACKEND_DIR / "data"
     outbox_dir: Path = BACKEND_DIR / "outbox"
 
-    pipeline_fake: bool = True
+    pipeline_fake: bool = False
     stt_backend: str = "local"
     llm_provider: str = "ollama"
     llm_model: str = "qwen3:14b"

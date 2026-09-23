@@ -30,9 +30,10 @@ def test_pipeline_failure_marks_failed(admin_client, monkeypatch) -> None:
     monkeypatch.setenv("CELERY_EAGER", "1")
 
     def boom(*a, **k):
-        raise RuntimeError("whisper exploded")
+        raise RuntimeError("private transcript +7 701 123 45 67")
 
     monkeypatch.setattr("app.tasks.process_meeting.pipeline.process", boom)
     m = create_meeting(admin_client).json()
     d = admin_client.get(f"/api/v1/meetings/{m['id']}").json()
-    assert d["status"] == "failed" and "whisper exploded" in d["error"]
+    assert d["status"] == "failed" and "RuntimeError" in d["error"]
+    assert "private transcript" not in d["error"] and "701" not in d["error"]

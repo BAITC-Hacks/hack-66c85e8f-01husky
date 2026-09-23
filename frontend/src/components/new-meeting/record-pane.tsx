@@ -3,9 +3,9 @@
 import { Loader2, Mic, MicOff, Square } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRef, useState } from "react";
-import { toast } from "sonner";
 import { LevelMeter } from "@/components/common/level-meter";
 import { Button } from "@/components/ui/button";
+import { useNotify } from "@/hooks/use-notify";
 import { openLiveSocket, type LiveSocket } from "@/lib/api/client";
 import { useRecorder } from "@/lib/audio/use-recorder";
 import { formatBytes, formatTimecode } from "@/lib/format";
@@ -26,6 +26,9 @@ export function RecordPane({
   const t = useTranslations("newMeeting.record");
   const socket = useRef<LiveSocket | null>(null);
   const meetingId = useRef<number | null>(null);
+  const stopping = useRef(false);
+  const te = useTranslations("errors");
+  const notify = useNotify();
   const [phase, setPhase] = useState<"idle" | "connecting" | "live" | "stopping">("idle");
   const rec = useRecorder({
     timeslice: 1000,
@@ -42,18 +45,46 @@ export function RecordPane({
       return;
     }
     meetingId.current = id;
-    const ws = await openLiveSocket(id);
+    let ws: LiveSocket;
+    try {
+      ws = await openLiveSocket(id);
+    } catch {
+      notify.warn(te("live.failed"), te("live.failedHint"));
+      setPhase("idle");
+      return;
+    }
     ws.binaryType = "blob";
     socket.current = ws;
-    ws.onerror = () => toast.error("WebSocket error");
+    let opened = false;
+    ws.onerror = () => {
+      if (!opened) {
+        notify.warn(te("live.failed"), te("live.failedHint"));
+        setPhase("idle");
+      }
+    };
+    // Server dropped us mid-recording: keep what was sent and go process it.
+    ws.onclose = () => {
+      if (!opened || stopping.current) return;
+      notify.warn(te("live.dropped"), te("live.droppedHint"));
+      rec.stop().then(() => onDone(id));
+    };
     ws.onopen = async () => {
-      await rec.start();
+      opened = true;
+      const micErr = await rec.start();
+      if (micErr) {
+        notify.warn(te(`mic.${micErr}`), te(`mic.${micErr}Hint`));
+        stopping.current = true;
+        ws.close();
+        setPhase("idle");
+        return;
+      }
       setPhase("live");
     };
   };
 
   const stop = async () => {
     setPhase("stopping");
+    stopping.current = true;
     await rec.stop();
     const ws = socket.current;
     if (ws && ws.readyState === WebSocket.OPEN) {
@@ -102,7 +133,7 @@ export function RecordPane({
           {live && t("sent", { size: formatBytes(rec.bytes) })}
           {rec.state === "denied" && (
             <span className="text-coral inline-flex items-center gap-1">
-              <MicOff className="size-3" /> {t("micDenied")}
+              <MicOff className="size-3" /> {te(`mic.${rec.error ?? "denied"}`)}
             </span>
           )}
         </div>

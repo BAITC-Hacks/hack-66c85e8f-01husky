@@ -6,25 +6,26 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
 import { z } from "zod";
 import { Field } from "@/components/common/field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MOCKING } from "@/lib/api/client";
+import { useNotify } from "@/hooks/use-notify";
+import { ApiError, MOCKING } from "@/lib/api/client";
 import { useLogin } from "@/lib/api/queries/auth";
 
 export default function LoginPage() {
   const t = useTranslations("auth");
   const router = useRouter();
   const login = useLogin();
+  const notify = useNotify();
   const schema = z.object({
     email: z.string().email(t("errors.email")),
     password: z.string().min(1, t("errors.password")),
   });
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-    defaultValues: MOCKING ? { email: "admin@hattama.kz", password: "admin" } : { email: "", password: "" },
+    defaultValues: MOCKING ? { email: "admin@kenes.ai", password: "admin" } : { email: "", password: "" },
   });
 
   const onSubmit = form.handleSubmit((v) =>
@@ -33,7 +34,13 @@ export default function LoginPage() {
         sessionStorage.removeItem("locale-synced");
         router.replace("/meetings");
       },
-      onError: (e) => toast.error(e.message),
+      onError: (e) => {
+        if (e instanceof ApiError && (e.status === 401 || e.status === 400)) {
+          form.setError("password", { message: t("errors.invalidCredentials") });
+        } else {
+          notify.error(e);
+        }
+      },
     }),
   );
 

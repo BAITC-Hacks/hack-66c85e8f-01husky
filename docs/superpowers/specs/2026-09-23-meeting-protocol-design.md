@@ -27,7 +27,7 @@
 Кейс запрещает передачу аудио/текста во внешние облачные API. Решение:
 
 - Каждый ИИ-компонент за интерфейсом провайдера. **Значения по умолчанию в `.env.example` и `docker-compose.yml`: локальные** (`STT_BACKEND=local`, `LLM_PROVIDER=ollama`).
-- Облачные провайдеры (`openai`, `nvidia`) существуют как dev/ускорение демо и помечены в README как «dev-only, в закрытом контуре заменяются на local/ollama/nvidia_nim без изменения кода».
+- Передача аудио и текста во внешние API запрещена также при разработке и демо. Только локальные/self-hosted модели; скачивание весов — отдельный подготовительный шаг без аудио/текста.
 - Аудио хранится только в `backend/data/audio/`. Есть операция «удалить аудио после протокола».
 - В транскрипте перед сохранением маскируются телефоны и ИИН (`pipeline/privacy.py`).
 - Никакой телеметрии, аналитики, внешних CDN в проде-профиле compose.
@@ -65,10 +65,10 @@ pipeline/
   pipeline/
     __init__.py      process(), enroll_voice()
     models.py        контракт (раздел 5), единственный источник типов
-    stt/             base.py, local_whisper.py, openai_whisper.py, nvidia_asr.py
+    stt/             local_whisper.py (локальные веса, offline)
     diarize.py       pyannote
     voiceprint.py    ECAPA embeddings, cosine match, enroll
-    llm/             base.py, ollama.py, nvidia_nim.py, openai.py
+    llm/             base.py, ollama.py (локальный/self-hosted)
     extract.py       агент извлечения поручений
     summary.py
     privacy.py
@@ -88,7 +88,7 @@ README.md
 
 ## 5. Контракт pipeline (pydantic, `pipeline/pipeline/models.py`)
 
-Это граница между Ардаком и Никитой. Backend импортирует эти типы как есть.
+Это граница pipeline и backend, оба модуля теперь ведёт Ардак. Backend импортирует эти типы как есть.
 
 ```python
 from datetime import date
@@ -153,7 +153,8 @@ def enroll_voice(audio_path: str) -> list[float]: ...      # эталон тем
 Правила:
 - `process()` синхронная, без сети кроме провайдеров, без БД, без FastAPI.
 - Все модели (whisper, pyannote, ECAPA) грузятся лениво и кешируются в процессе.
-- Провайдеры выбираются из env: `STT_BACKEND=local|openai|nvidia`, `LLM_PROVIDER=ollama|nvidia_nim|openai`, `LLM_MODEL`, `OLLAMA_URL`, `NVIDIA_API_KEY`, `OPENAI_API_KEY`, `HF_TOKEN`.
+- Конфигурация: `STT_BACKEND=local`, `STT_MODEL`, `STT_MODEL_DIR`, `STT_LANGUAGE=auto|ru|kk`, `LLM_PROVIDER=ollama`, `LLM_MODEL`, `OLLAMA_URL` (локальный адрес). `HF_TOKEN` используется только при подготовке gated-весов, не для обработки записи.
+- Промежуточный этап STT сохраняет контракт: неизвестный говорящий `SPEAKER_UNKNOWN`, язык сегмента `other`, пустые `speaker_map/tasks/summary`, недоступные этапы отмечены в `model_info`. `draft` на этом этапе не означает готовность полного протокола.
 - `pipeline.fake.process()` имеет ту же сигнатуру и возвращает правдоподобный результат с 3 спикерами и 4 поручениями. Backend использует его при `PIPELINE_FAKE=1`.
 
 ### 5.1 Агент извлечения поручений (`extract.py`)
@@ -273,16 +274,14 @@ Celery:
 Вход: раздел 7 (API) и раздел 8 (экраны). До готовности бэка: `pnpm mock` поднимает msw/json-server с фикстурами из `frontend/mocks/`, повторяющими схемы раздела 7.
 Готово, когда: все 8 экранов работают против реального бэка, сценарий «загрузить файл → увидеть черновик → поправить спикера → подтвердить → скачать PDF → увидеть задачу на дашборде → получить уведомление» проходит без перезагрузки.
 
-### Никита: `backend/`, `docker-compose.yml`, `.env.example`, `README.md`
+### Ардак (ранее Никита): `backend/`, `docker-compose.yml`, `.env.example`, `README.md`
 Вход: разделы 6, 7, контракт 5. До готовности пайплайна: `PIPELINE_FAKE=1` → `pipeline.fake.process`.
-Также: `services/export.py` (DOCX-шаблон: шапка организации, название, дата, участники, саммари, таблица поручений, приложение с транскриптом; PDF через LibreOffice), `services/sed/` (интерфейс `SEDClient.push_protocol(meeting, pdf_path) -> sed_ref`, `MockSED` пишет `outbox/<meeting_id>/protocol.pdf + meta.json` и возвращает `SED-2026-000123`), `services/notify.py` (создание notifications), Celery beat, seed-скрипт (admin, 5 участников, направления), README (устройство, запуск в 3 команды, сценарий демо, on-prem раздел, dev-провайдеры).
+Также: `services/export.py` (DOCX-шаблон: шапка организации, название, дата, участники, саммари, таблица поручений, приложение с транскриптом; PDF через LibreOffice), `services/sed/` (интерфейс `SEDClient.push_protocol(meeting, pdf_path) -> sed_ref`, `MockSED` пишет `outbox/<meeting_id>/protocol.pdf + meta.json` и возвращает `SED-2026-000123`), `services/notify.py` (создание notifications), Celery beat, seed-скрипт (admin, 5 участников, направления), README (устройство, проверенный запуск, сценарий демо, on-prem раздел, подготовка локальных моделей).
 Готово, когда: `docker compose up` поднимает всё, `pytest` зелёный, curl-сценарий из README проходит, DOCX/PDF открываются.
 
 ### Ардак: `pipeline/`
 Вход: раздел 5. Первое действие: прогнать реальную тестовую запись через `python -m pipeline.cli`, сравнить `language=None` vs `language=ru` для шала-казахского, зафиксировать выбор в `pipeline/README.md`.
-Порядок: stt local → diarize → cli печатает MeetingResult → extract агент → summary → voiceprint + enroll → privacy → провайдеры openai/nvidia.
-Бот: Playwright Chromium с фейковым аудио-устройством, заходит по ссылке как «Протокол-бот», ждёт допуска, пишет аудио вкладки через `--use-fake-ui-for-media-stream` + ffmpeg/pulse (Linux в docker) или screen-capture API, по окончании `POST /meetings/{id}/audio`.
-Готово, когда: cli на реальной записи даёт верных спикеров, поручения с верными датами и ответственными; `pytest` на `fake` и на unit-нормализации дат зелёный.
+Порядок: локальные PostgreSQL/Redis → stt local + privacy → API/Celery/MeetingResult → diarize → локальный extract → summary → voiceprint + enroll. Никаких облачных провайдеров. Готово, когда реальная запись даёт проверяемые спикеры, поручения, даты и саммари, результат сохраняется и экспортируется backend.
 
 ### Агент B / Никита: `bots/` и bot runtime
 
@@ -302,7 +301,7 @@ Celery:
 - Секреты только в `.env` (gitignored). `.env.example` с локальными значениями по умолчанию.
 - CI только локально: `./scripts/check.sh` перед PR, GitHub Actions в репозитории хакатона не включаем.
 - Тесты: backend pytest + httpx; pipeline pytest на fake и на чистые функции; frontend минимум vitest на утилиты.
-- Никаких внешних вызовов из кода по умолчанию. Любой облачный провайдер за флагом.
+- Никаких внешних вызовов при обработке аудио/текста. Облачные ИИ-провайдеры запрещены.
 
 ## 11. Вне scope
 
@@ -313,6 +312,6 @@ Celery:
 | Риск | Митигация |
 |---|---|
 | Whisper плохо берёт шала-казахский | Проверить на реальной записи в первый час; форс `ru` + LLM-постправка; казахский fine-tune whisper с HF как запасной |
-| pyannote медленный на CPU | Демо-запись 3-5 минут; `STT_BACKEND=nvidia` для скорости на демо; в README честно |
+| pyannote медленный на CPU | Демо-запись 3-5 минут; замер на целевом железе, при необходимости локальный GPU; реальное время указать в README |
 | Бот не входит / не пишет звук | Проверить гостевой доступ и допуск, затем аудиоканал. Meet, Zoom и Teams остаются обязательными; непроверенные платформы отмечаются явно. SDK или учётная сессия требуют отдельной интеграции |
 | LLM выдумывает поручения | Шаг Verify по дословной цитате в коде, confidence в UI, черновик подтверждает секретарь |

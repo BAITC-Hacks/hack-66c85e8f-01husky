@@ -3,7 +3,6 @@
 PIPELINE_FAKE=1 routes everything to pipeline.fake so backend works without ML models.
 """
 
-import os
 from datetime import date
 
 from pipeline.models import (
@@ -29,7 +28,9 @@ __all__ = [
 
 
 def is_fake() -> bool:
-    return os.getenv("PIPELINE_FAKE", "0") in {"1", "true", "yes"}
+    from pipeline.settings import PipelineSettings
+
+    return PipelineSettings().pipeline_fake
 
 
 def process(

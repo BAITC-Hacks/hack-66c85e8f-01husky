@@ -1,7 +1,7 @@
 /** Builds a tiny valid one-page PDF so the mock "Скачать PDF" opens in a viewer. */
 export function MINIMAL_PDF(title: string): string {
   const ascii = title.normalize("NFKD").replace(/[^\x20-\x7E]/g, "").trim() || "Meeting";
-  const text = `BT /F1 20 Tf 72 740 Td (Hattama - protocol draft) Tj 0 -32 Td /F1 12 Tf (${ascii.replace(/[()\\]/g, "")}) Tj 0 -20 Td (Mock export - real file is rendered by backend/services/export.py) Tj ET`;
+  const text = `BT /F1 20 Tf 72 740 Td (Kenes AI - protocol draft) Tj 0 -32 Td /F1 12 Tf (${ascii.replace(/[()\\]/g, "")}) Tj 0 -20 Td (Mock export - real file is rendered by backend/services/export.py) Tj ET`;
   const objs = [
     "<< /Type /Catalog /Pages 2 0 R >>",
     "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",

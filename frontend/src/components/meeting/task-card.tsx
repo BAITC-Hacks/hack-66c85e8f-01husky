@@ -37,8 +37,7 @@ export function TaskCard({
   const [text, setText] = useState(task.text);
   useEffect(() => setText(task.text), [task.text]);
 
-  const save = (patch: TaskPatch) =>
-    update.mutate({ id: task.id, ...patch }, { onError: (e) => toast.error(e.message) });
+  const save = (patch: TaskPatch) => update.mutate({ id: task.id, ...patch });
   const low = task.confidence < LOW_CONFIDENCE;
 
   return (
