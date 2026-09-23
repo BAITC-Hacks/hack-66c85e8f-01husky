@@ -36,6 +36,7 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
+      target: backend
     env_file: .env
     command:
       - sh
@@ -67,8 +68,9 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
+      target: backend
     env_file: .env
-    command: ["uv", "run", "--no-sync", "celery", "-A", "app.tasks.celery_app:celery_app", "worker", "--loglevel=info"]
+    command: ["uv", "run", "--no-sync", "celery", "-A", "app.tasks.celery_app:celery_app", "worker", "-Q", "celery", "--loglevel=info"]
     volumes:
       - ./backend/data:/app/backend/data
       - ./backend/outbox:/app/backend/outbox
@@ -80,10 +82,28 @@ services:
       redis:
         condition: service_healthy
 
+  bot-worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: bot-runtime
+    env_file: .env
+    init: true
+    shm_size: 1gb
+    stop_grace_period: 60s
+    environment:
+      BOT_AUDIO_DEVICE: pulse:kenes.monitor
+    depends_on:
+      api:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   beat:
     build:
       context: .
       dockerfile: backend/Dockerfile
+      target: backend
     env_file: .env
     command: ["uv", "run", "--no-sync", "celery", "-A", "app.tasks.celery_app:celery_app", "beat", "--loglevel=info"]
     volumes:

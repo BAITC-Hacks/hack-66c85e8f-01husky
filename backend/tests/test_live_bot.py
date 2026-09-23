@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 from starlette.websockets import WebSocketDisconnect
 
+from app.services.bot_tokens import create_bot_upload_token
 from tests.helpers import wav_bytes
 
 
@@ -52,7 +53,7 @@ def test_bot_meeting_dispatches_task(admin_client, monkeypatch) -> None:
     assert r.status_code == 201, r.text
     m = r.json()
     assert m["source"] == "bot" and m["platform"] == "meet" and m["status"] == "processing"
-    assert calls == [(m["id"], "meet", "https://meet.google.com/abc-defg-hij")]
+    assert calls == [(m["id"],)]
     assert (
         admin_client.post(
             "/api/v1/meetings/bot",
@@ -76,7 +77,7 @@ def test_bot_audio_callback_with_token(client, admin_client, monkeypatch) -> Non
             "title": "Bot",
             "meeting_date": "2026-09-23",
             "platform": "zoom",
-            "url": "https://zoom.us/j/1",
+            "url": "https://zoom.us/j/12345678901",
         },
     ).json()
     files = {"file": ("rec.wav", io.BytesIO(wav_bytes()), "audio/wav")}
@@ -84,17 +85,20 @@ def test_bot_audio_callback_with_token(client, admin_client, monkeypatch) -> Non
     r = client.post(
         f"/api/v1/meetings/{m['id']}/audio",
         files=files,
-        headers={"X-Bot-Token": "change-me-bot-token"},
+        headers={"X-Bot-Token": create_bot_upload_token(m["id"])},
     )
     assert r.status_code == 200, r.text
     d = admin_client.get(f"/api/v1/meetings/{m['id']}").json()
     assert d["status"] == "draft" and len(d["tasks"]) == 4
 
 
-def test_run_bot_without_bots_package_marks_failed(admin_client, monkeypatch) -> None:
+def test_run_bot_runtime_start_failure_marks_failed(admin_client, monkeypatch) -> None:
     from app.tasks import run_bot as rb
 
-    monkeypatch.setattr(rb, "BOTS_DIR", Path("/nonexistent"))
+    def unavailable(*args, **kwargs):
+        raise FileNotFoundError()
+
+    monkeypatch.setattr(rb.subprocess, "Popen", unavailable)
     monkeypatch.setattr("app.tasks.run_bot.run_bot.delay", lambda *a: None)
     m = admin_client.post(
         "/api/v1/meetings/bot",
@@ -102,9 +106,9 @@ def test_run_bot_without_bots_package_marks_failed(admin_client, monkeypatch) ->
             "title": "Bot",
             "meeting_date": "2026-09-23",
             "platform": "teams",
-            "url": "https://teams.microsoft.com/x",
+            "url": "https://teams.microsoft.com/l/meetup-join/19%3ameeting_test%40thread.v2/0?context=%7B%7D",
         },
     ).json()
-    rb.run_bot.apply(args=(m["id"], "teams", "https://teams.microsoft.com/x"))
+    rb.run_bot.apply(args=(m["id"],))
     d = admin_client.get(f"/api/v1/meetings/{m['id']}").json()
-    assert d["status"] == "failed" and "bots/" in d["error"]
+    assert d["status"] == "failed" and "runtime" in d["error"]

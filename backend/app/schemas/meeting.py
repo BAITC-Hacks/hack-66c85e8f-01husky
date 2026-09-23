@@ -1,6 +1,7 @@
 from datetime import date, datetime
 
-from pydantic import Field
+from bots.urls import validate_meeting_url
+from pydantic import Field, model_validator
 
 from app.models.enums import (
     Locale,
@@ -107,3 +108,8 @@ class LiveMeetingIn(ORMModel):
 class BotMeetingIn(LiveMeetingIn):
     platform: str = Field(pattern="^(meet|zoom|teams)$")
     url: str = Field(min_length=8, max_length=1000)
+
+    @model_validator(mode="after")
+    def validate_url(self):
+        self.url = validate_meeting_url(self.platform, self.url)
+        return self

@@ -17,6 +17,7 @@ celery_app.conf.update(
     timezone="Asia/Almaty",
     enable_utc=True,
     task_track_started=True,
+    task_routes={"app.tasks.run_bot.run_bot": {"queue": "bots"}},
     worker_prefetch_multiplier=1,
     task_acks_late=True,
     beat_schedule={

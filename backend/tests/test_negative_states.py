@@ -45,11 +45,12 @@ def test_reprocess_failed_meeting_recovers(admin_client, draft, db) -> None:
 def test_audio_upload_states(client, admin_client, draft, db) -> None:
     url = f"/api/v1/meetings/{draft['id']}/audio"
     _set_status(db, draft["id"], MeetingStatus.processing, "extract")
-    assert client.post(url, files=_files(), headers=TOKEN).status_code == 409
+    assert admin_client.post(url, files=_files()).status_code == 409
     _set_status(db, draft["id"], MeetingStatus.processing, "bot_joining")
-    assert client.post(url, files=_files(), headers=TOKEN).status_code == 200
+    assert admin_client.post(url, files=_files()).status_code == 200
     admin_client.post(f"/api/v1/meetings/{draft['id']}/confirm")
-    assert client.post(url, files=_files(), headers=TOKEN).status_code == 409
+    assert admin_client.post(url, files=_files()).status_code == 409
+    assert client.post(url, files=_files(), headers=TOKEN).status_code == 401
     assert client.post(url, files=_files(), headers={"X-Bot-Token": "wrong"}).status_code == 401
     assert (
         client.post("/api/v1/meetings/99999/audio", files=_files(), headers=TOKEN).status_code

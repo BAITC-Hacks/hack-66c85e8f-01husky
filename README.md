@@ -68,7 +68,7 @@ HackAlem AI · команда 01husky · кейс «Система автопр�
 | Голосовая идентификация | Привязка участника по голосовому эталону | API есть; качество модели ещё не проверено |
 | СЭД | PDF и регистрационный номер | Работает MockSED, интеграция с конкретной СЭД вне обязательной части |
 | Закрытый контур | Локальные модели и развёртывание Compose | Конфигурация есть; контейнерный прогон и проверка сетевой изоляции впереди |
-| Meet / Zoom / Teams | Запись встречи через бота | Backend и CLI-контракт есть; адаптеры платформ в работе |
+| Meet / Zoom / Teams | Запись встречи через бота | Гостевые адаптеры и очередь готовы к проверке; живой вход и запись ещё не подтверждены |
 
 Полная [проектная спецификация](docs/superpowers/specs/2026-09-23-meeting-protocol-design.md) содержит контракты и распределение работ.
 
@@ -106,7 +106,7 @@ HackAlem AI · команда 01husky · кейс «Система автопр�
 - `pipeline/`: чистая библиотека без веба и БД. Одна функция `process(audio_path, meeting_date, participants, directions, output_language, progress) -> MeetingResult`. `PIPELINE_FAKE=1` подменяет её детерминированной заглушкой, чтобы бэкенд и фронт работали без ML-моделей.
 - `backend/`: FastAPI + Celery. Хранит, раздаёт, экспортирует, уведомляет. Пайплайн вызывает как библиотеку.
 - `frontend/`: Next.js, ходит только в REST API.
-- `bots/`: отдельный процесс, общается с бэком через `POST /meetings/{id}/audio` с токеном `BOT_API_TOKEN`.
+- `bots/`: отдельный процесс, общается с бэком через `POST /meetings/{id}/audio` с временным токеном конкретной встречи; общий `BOT_API_TOKEN` не поддерживается.
 
 ## Стек
 
@@ -272,7 +272,7 @@ curl -s -b c.txt $API/notifications/unread-count
 curl -s -b c.txt -X POST $API/meetings/live -H 'Content-Type: application/json' \
   -d "{\"title\":\"Live\",\"meeting_date\":\"2026-09-23\",\"participant_ids\":[$PID]}"
 
-# бот (без пакета bots/ совещание получит статус failed с понятной ошибкой)
+# бот (нужны bot-worker, разрешённый гостевой вход и допуск организатора)
 curl -s -b c.txt -X POST $API/meetings/bot -H 'Content-Type: application/json' \
   -d "{\"title\":\"Meet\",\"meeting_date\":\"2026-09-23\",\"platform\":\"meet\",\"url\":\"https://meet.google.com/abc-defg-hij\",\"participant_ids\":[$PID]}"
 ```
@@ -301,7 +301,7 @@ curl -s -b c.txt -X POST $API/meetings/bot -H 'Content-Type: application/json' \
 - `.env.example` задаёт `STT_BACKEND=local`, `LLM_PROVIDER=ollama` и `PIPELINE_FAKE=1`. При fake модели не запускаются. Для реального режима нужны реализация пайплайна, локальные веса и отдельная проверка сетевых обращений.
 - `DELETE /meetings/{id}/audio` удаляет запись после обработки; транскрипт и поручения остаются. Операция проверена в HTTP smoke.
 - Маскирование телефонов и ИИН предусмотрено в пайплайне. Его нужно проверить на реальной реализации до использования чувствительных данных.
-- Секреты хранятся в `.env`, исключённом из git. Перед развёртыванием меняются `SECRET_KEY` и `BOT_API_TOKEN`.
+- Секреты хранятся в `.env`, исключённом из git. Перед развёртыванием задаётся случайный `SECRET_KEY`; бот получает временный токен от backend.
 
 Материалы в `docs/demo/` содержат вымышленные имена и смоделированный разговор. Исходные реальные записи из рабочей папки `samples/` в репозиторий не включены; для демонстрации ТЗ требует их анонимизации.
 
@@ -346,7 +346,7 @@ docker compose exec -T api uv run --no-sync python scripts/smoke_backend.py --ap
 | Контракт пайплайна и `PIPELINE_FAKE` | готово; интеграция backend проверена на детерминированной заглушке |
 | Реальный пайплайн (`pipeline/real.py`: whisper, pyannote, voiceprint, LLM-агент, саммари, privacy) | в работе; до его появления `pipeline.cli` без `PIPELINE_FAKE=1` завершается `NotImplementedError` |
 | Фронтенд | отдельное Next.js-приложение, в работе |
-| Бот Meet / Zoom / Teams | жизненный цикл, запись, загрузка и CLI-контракт готовы; адаптеры селекторов web-клиентов в работе |
+| Бот Meet / Zoom / Teams | гостевые адаптеры, lifecycle и callback покрыты тестами; живой вход и слышимая запись трёх платформ ещё не подтверждены |
 | Docker Compose | конфигурация и локальный check.sh добавлены; сборка и запуск контейнеров пока не подтверждены |
 
 ## Структура репозитория
@@ -364,7 +364,7 @@ pipeline/      ML-пайплайн как библиотека (владелец
   pipeline/fake.py     детерминированная заглушка (PIPELINE_FAKE=1)
   pipeline/real.py     реальная реализация: stt/, diarize, voiceprint, extract, summary, privacy
   pipeline/cli.py      python -m pipeline.cli <audio> --date ...
-bots/          Playwright-бот для Meet / Zoom / Teams (владелец: Ардак)
+bots/          Playwright-бот для Meet / Zoom / Teams (владелец: агент B / Никита)
 docs/superpowers/specs/   проектная спецификация
 docker-compose.yml, .env.example, backend/Dockerfile
 ```
@@ -376,7 +376,7 @@ docker-compose.yml, .env.example, backend/Dockerfile
 Сделано как прототип:
 
 - СЭД: mock-адаптер с контрактом `SEDClient.push_protocol()`. Реальный адаптер под конкретную СЭД (Documentolog, Directum) пишется по этому интерфейсу.
-- Бот-участник: web-клиенты через Playwright. Официальные SDK Zoom / Teams требуют регистрации приложений и не входят в прототип.
+- Бот-участник: web-клиенты через Playwright. Требования к гостевому входу, запуск и ограничения: [bots/README.md](bots/README.md). Исследование Fireflies и SDK: [способы подключения](docs/meeting-bot-access.md).
 - Live-транскрипт появляется после кнопки «Стоп», не в реальном времени.
 - Уведомления in-app. Email / Telegram возможны как отдельное расширение.
 

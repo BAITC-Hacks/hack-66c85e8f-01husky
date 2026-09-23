@@ -17,7 +17,6 @@ from fastapi import (
 )
 from sqlalchemy import select
 
-from app.config import get_settings
 from app.db import SessionLocal
 from app.deps import COOKIE_NAME, DbDep, current_user
 from app.models import Meeting, Participant, Task, User
@@ -36,6 +35,7 @@ from app.security import decode_access_token
 from app.services import audio as audio_svc
 from app.services import notify
 from app.services.access import get_meeting_or_404, require_editor, visible_meetings
+from app.services.bot_tokens import awaiting_bot_audio, valid_bot_upload_token
 from app.services.processing import enqueue_processing
 from app.services.speakers import apply_speaker_map
 
@@ -159,7 +159,12 @@ def create_bot_meeting(body: BotMeetingIn, db: DbDep, user: UserDep) -> MeetingO
     m = _new_meeting(db, user, body, MeetingSource.bot, platform=body.platform, bot_url=body.url)
     m.status, m.progress_stage = MeetingStatus.processing, "bot_joining"
     db.commit()
-    run_bot.delay(m.id, body.platform, body.url)
+    try:
+        run_bot.delay(m.id)
+    except Exception:  # noqa: BLE001 - preserve a terminal state if dispatch fails
+        m.status, m.error = MeetingStatus.failed, "Bot queue is unavailable"
+        db.commit()
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Bot queue is unavailable")
     db.refresh(m)
     return meeting_out(m)
 
@@ -168,7 +173,7 @@ def _attach_audio_and_process(db, m: Meeting, src) -> None:
     wav = audio_svc.to_wav(src)
     m.audio_path = str(wav)
     m.duration_sec = audio_svc.probe_duration(wav)
-    m.status = MeetingStatus.uploaded
+    m.status, m.progress_stage = MeetingStatus.uploaded, None
     db.commit()
     enqueue_processing(m.id)
 
@@ -185,10 +190,16 @@ def upload_meeting_audio(
 
     Auth: either the bot token header or a logged-in editor.
     """
-    m = db.get(Meeting, meeting_id)
+    # Lock through audio attachment so simultaneous callbacks cannot both succeed.
+    m = db.scalar(select(Meeting).where(Meeting.id == meeting_id).with_for_update())
     if not m:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Meeting not found")
-    if x_bot_token != get_settings().bot_api_token:
+    if x_bot_token is not None:
+        if not valid_bot_upload_token(x_bot_token, meeting_id):
+            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid bot upload token")
+        if not awaiting_bot_audio(m):
+            raise HTTPException(status.HTTP_409_CONFLICT, "Meeting is not awaiting bot audio")
+    else:
         uid = decode_access_token(access_token) if access_token else None
         user = db.get(User, uid) if uid else None
         if not user:
@@ -199,6 +210,7 @@ def upload_meeting_audio(
     if m.status == MeetingStatus.processing and m.progress_stage not in (
         None,
         "bot_joining",
+        "bot_recording",
         "recording",
     ):
         raise HTTPException(status.HTTP_409_CONFLICT, "Meeting is already being processed")

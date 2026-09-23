@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Meeting bot: joins Google Meet / Zoom / Teams web clients, records audio, uploads to the backend"
 requires-python = ">=3.12"
 dependencies = [
-    "playwright>=1.47",
+    "playwright>=1.48",
     "httpx>=0.27",
 ]
 

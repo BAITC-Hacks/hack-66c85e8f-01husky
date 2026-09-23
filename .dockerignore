@@ -9,3 +9,6 @@ backend/data
 backend/outbox
 frontend/node_modules
 frontend/.next
+bots/recordings
+bots/.browser-state
+bots/test-results

@@ -10,3 +10,6 @@ backend/data/
 backend/outbox/
 *.egg-info/
 .DS_Store
+bots/recordings/
+bots/.browser-state/
+bots/test-results/
