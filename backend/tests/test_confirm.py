@@ -61,3 +61,27 @@ def test_confirm_flow(admin_client, user_client, draft, db) -> None:
     # confirm is idempotent w.r.t. notifications even if called through other paths
     admin_client.patch(f"/api/v1/tasks/{d['tasks'][0]['id']}", json={"text": "x"})
     assert len(list(db.scalars(select(Notification)))) == 2
+
+
+def test_manual_mapping_resolves_self_assignment_and_can_unassign(admin_client, draft):
+    task = draft["tasks"][0]
+    admin_client.patch(
+        f"/api/v1/tasks/{task['id']}",
+        json={
+            "assignee_name": "SPEAKER_00",
+            "assignee_participant_id": None,
+        },
+    ).raise_for_status()
+    pid = draft["participants"][0]["id"]
+    for target in (pid, None):
+        result = admin_client.put(
+            f"/api/v1/meetings/{draft['id']}/speakers",
+            json=[{"speaker": "SPEAKER_00", "participant_id": target}],
+        )
+        result.raise_for_status()
+        assert (
+            next(t for t in result.json()["tasks"] if t["id"] == task["id"])[
+                "assignee_participant_id"
+            ]
+            == target
+        )

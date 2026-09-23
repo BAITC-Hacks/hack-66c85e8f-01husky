@@ -34,6 +34,7 @@ class SpeakerMapping(BaseModel):
     participant_id: int | None
     source: SpeakerSource
     confidence: float = Field(ge=0.0, le=1.0)
+    participant_name: str | None = Field(default=None, max_length=255)
 
 
 class Task(BaseModel):
