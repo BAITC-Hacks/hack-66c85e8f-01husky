@@ -1,6 +1,6 @@
 """Lazy, cached offline Whisper. Never downloads models while processing audio."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
 
@@ -10,10 +10,19 @@ from pipeline.settings import PipelineSettings
 
 
 @dataclass
+class TranscriptWord:
+    start: float
+    end: float
+    text: str
+
+
+@dataclass
 class TranscriptSegment:
     start: float
     end: float
     text: str
+    # Internal alignment data only; never serialize raw words to logs, API or CLI JSON.
+    words: list[TranscriptWord] = field(default_factory=list, repr=False)
 
 
 @dataclass
@@ -81,7 +90,11 @@ def transcribe(
         for segment in segments:
             text = mask_sensitive(segment.text.strip())
             if text:
-                result.append(TranscriptSegment(segment.start, segment.end, text))
+                words = [
+                    TranscriptWord(word.start, word.end, word.word)
+                    for word in (getattr(segment, "words", None) or [])
+                ]
+                result.append(TranscriptSegment(segment.start, segment.end, text, words))
             if progress:
                 progress("stt", 0.1 + 0.8 * min(segment.end / max(info.duration, 0.01), 1))
     except Exception:  # noqa: BLE001 -- sanitize decoder errors at the provider boundary

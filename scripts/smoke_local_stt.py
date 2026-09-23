@@ -15,6 +15,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("audio", type=Path)
     parser.add_argument("--date", default="2026-09-23")
+    parser.add_argument("--min-speakers", type=int, default=1)
     args = parser.parse_args()
     with httpx.Client(base_url="http://127.0.0.1:8000/api/v1", timeout=60) as client:
         response = client.post(
@@ -29,7 +30,7 @@ def main() -> None:
             response = client.post(
                 "/meetings",
                 data={
-                    "title": f"{args.audio.stem} — локальная проверка STT",
+                    "title": f"{args.audio.stem} — STT и разделение голосов",
                     "meeting_date": args.date,
                     "output_language": "ru",
                 },
@@ -53,13 +54,20 @@ def main() -> None:
             if detail["status"] == "draft":
                 assert detail["segments"], "Expected speech in the supplied recording"
                 assert (
-                    detail["model_info"]["processing_mode"] == "local_offline_stt_only"
+                    detail["model_info"]["processing_mode"]
+                    == "local_offline_stt_diarization"
                 )
-                assert detail["tasks"] == detail["speaker_map"] == []
+                speakers = list(dict.fromkeys(s["speaker"] for s in detail["segments"]))
+                assert len(speakers) >= args.min_speakers
+                assert speakers == [f"speaker{i + 1}" for i in range(len(speakers))]
+                assert [s["speaker"] for s in detail["speaker_map"]] == sorted(speakers)
+                assert all(s["participant_id"] is None for s in detail["speaker_map"])
+                assert detail["tasks"] == []
                 assert detail["summary"] == ""
                 assert detail["progress_pct"] == 100
                 print(
-                    f"PASS: meeting {meeting_id}, {len(detail['segments'])} persisted segments"
+                    f"PASS: meeting {meeting_id}, {len(detail['segments'])} persisted segments, "
+                    f"speakers: {', '.join(speakers)}"
                 )
                 return
             time.sleep(3)

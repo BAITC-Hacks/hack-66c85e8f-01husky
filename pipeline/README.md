@@ -5,7 +5,7 @@
 ```bash
 cd pipeline
 uv sync                      # контракт + настройки
-uv sync --extra stt          # + локальный Whisper
+uv sync --extra stt          # + локальный Whisper и sherpa-onnx
 uv sync --extra ml           # + whisper, pyannote, speechbrain
 uv run pytest
 PIPELINE_FAKE=1 uv run python -m pipeline.cli sample.wav --date 2026-09-23
@@ -17,7 +17,7 @@ PIPELINE_FAKE=1 uv run python -m pipeline.cli sample.wav --date 2026-09-23
 
 `transcribe_local.py` и backend используют общий провайдер `pipeline/stt/local_whisper.py`. Аудио не отправляется в облако. Транскрипция всегда offline: веса должны быть подготовлены заранее, иначе будет ошибка. `--offline` оставлен для совместимости.
 
-При `PIPELINE_FAKE=0` работает настоящий STT, но диаризация, поручения, саммари и voiceprint пока не реализованы: `SPEAKER_UNKNOWN`, пустые задачи и summary, статусы `unavailable` в `model_info`. Общий язык файла не считается языком каждой реплики; сегменты пока имеют `lang=other`.
+При `PIPELINE_FAKE=0` работают STT и локальная акустическая диаризация: метки `speaker1`, `speaker2`, …, слова распределяются по голосам. Поручения, саммари и voiceprint-идентификация пока не реализованы; имена не угадываются, `speaker_map.participant_id=null`. Общий язык файла не считается языком каждой реплики; сегменты пока имеют `lang=other`.
 
 ### Установка минимального окружения
 
@@ -28,6 +28,7 @@ cd pipeline
 .venv/bin/pip install -r requirements-local.txt
 # Отдельная подготовка с доступом в интернет, без аудио/текста:
 HF_HUB_OFFLINE=0 .venv/bin/python -m pipeline.download_model
+.venv/bin/python -m pipeline.download_diarization_models
 ```
 
 ### Расшифровка
@@ -36,6 +37,8 @@ HF_HUB_OFFLINE=0 .venv/bin/python -m pipeline.download_model
 
 ```bash
 .venv/bin/python transcribe_local.py recordings/meeting.m4a
+# Текст + разделение по голосам (полный MeetingResult):
+PIPELINE_FAKE=0 .venv/bin/python -m pipeline.cli recordings/meeting.m4a --date 2026-09-23
 ```
 
 Для проверки шала-казахской речи сделайте два прогона и сравните JSON:
@@ -58,3 +61,7 @@ HF_HUB_OFFLINE=0 .venv/bin/python -m pipeline.download_model
 В JSON сохраняются текст и таймкоды; цифровые шаблоны телефонов и ИИН маскируются. Это не полная анонимизация. Сырые word-level тексты не экспортируются. Записи и кеш весов не входят в Git.
 
 [Запуск с PostgreSQL, Redis, Celery и API](../docs/local-development.md).
+
+[Модели, настройки и ограничения диаризации](../docs/local-diarization.md).
+`transcribe_local.py` остаётся STT-only утилитой сравнения языков; backend и `pipeline.cli`
+вызывают полный процесс с разделением по голосам. Веса не скачиваются во время обработки.

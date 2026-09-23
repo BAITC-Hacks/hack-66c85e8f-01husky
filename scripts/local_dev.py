@@ -77,6 +77,8 @@ def setup():
             "STT_DEVICE": "cpu",
             "STT_COMPUTE_TYPE": "int8",
             "STT_CPU_THREADS": "4",
+            "DIARIZATION_CPU_THREADS": "4",
+            "DIARIZATION_THRESHOLD": "0.5",
             "HF_HUB_OFFLINE": "1",
             "HF_HUB_DISABLE_TELEMETRY": "1",
             "LLM_PROVIDER": "ollama",
