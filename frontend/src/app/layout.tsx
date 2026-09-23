@@ -18,7 +18,7 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Хаттама", template: "%s · Хаттама" },
+  title: { default: "Kenes AI", template: "%s · Kenes AI" },
   description: "Автопротоколирование совещаний с фиксацией поручений",
 };
 

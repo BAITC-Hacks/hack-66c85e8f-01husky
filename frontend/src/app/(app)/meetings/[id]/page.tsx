@@ -6,9 +6,9 @@ import { useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { PrivacyBadge } from "@/components/brand/privacy-badge";
+import { QueryError } from "@/components/common/error-screen";
 import { SealStamp } from "@/components/brand/seal-stamp";
 import { MeetingStatusBadge } from "@/components/common/badges";
-import { EmptyState } from "@/components/common/bits";
 import { ActionsBar } from "@/components/meeting/actions-bar";
 import { LangMix } from "@/components/meeting/lang-mix";
 import { PipelineStepper } from "@/components/meeting/pipeline-stepper";
@@ -37,7 +37,7 @@ export default function MeetingPage() {
   const tp = useTranslations("platform");
   const locale = useLocale();
 
-  const { data, isLoading, error } = useMeeting(meetingId);
+  const { data, isLoading, error, refetch } = useMeeting(meetingId);
   const { data: allParticipants = [] } = useParticipants();
   const { data: directions = [] } = useDirections();
   const reprocess = useMeetingAction(meetingId, "reprocess");
@@ -93,16 +93,7 @@ export default function MeetingPage() {
     );
   }
   if (error || !data) {
-    return (
-      <EmptyState
-        title={error?.message ?? "404"}
-        action={
-          <Button asChild variant="outline">
-            <Link href="/meetings">{t("back")}</Link>
-          </Button>
-        }
-      />
-    );
+    return <QueryError error={error} notFound="meetingNotFound" onRetry={() => refetch()} />;
   }
 
   const m = data.meeting;

@@ -17,6 +17,13 @@ export async function transport(url: string, init: RequestInit): Promise<Respons
   return fetch(url, init);
 }
 
+/** Synthetic statuses for failures that never got an HTTP response. */
+export const NETWORK_ERROR = 0;
+export const TIMEOUT_ERROR = 408;
+
+/** JSON requests give up after this long; uploads (FormData) are left unbounded. */
+const REQUEST_TIMEOUT_MS = 30_000;
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -41,6 +48,18 @@ export function buildUrl(path: string, query?: Query): string {
   return `${API_PREFIX}${path}${s ? `?${s}` : ""}`;
 }
 
+/** transport() that turns "no response at all" into an ApiError too, so callers handle one error type. */
+export async function send(url: string, init: RequestInit): Promise<Response> {
+  try {
+    return await transport(url, init);
+  } catch (e) {
+    if (e instanceof DOMException && (e.name === "TimeoutError" || e.name === "AbortError")) {
+      throw new ApiError(TIMEOUT_ERROR, "timeout");
+    }
+    throw new ApiError(NETWORK_ERROR, "network");
+  }
+}
+
 async function request<T>(
   method: string,
   path: string,
@@ -53,13 +72,15 @@ async function request<T>(
     init.body = JSON.stringify(opts.body);
     (init.headers as Record<string, string>)["Content-Type"] = "application/json";
   }
-  const res = await transport(buildUrl(path, opts.query), init);
+  if (!opts.form) init.signal = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+  const res = await send(buildUrl(path, opts.query), init);
   if (!res.ok) {
     let detail = res.statusText;
     try {
       const data = await res.json();
       if (typeof data?.detail === "string") detail = data.detail;
-      else if (Array.isArray(data?.detail)) detail = data.detail.map((d: { msg: string }) => d.msg).join("; ");
+      else if (Array.isArray(data?.detail))
+        detail = data.detail.map((d: { msg: string }) => d.msg).join("; ");
     } catch {
       /* not json */
     }

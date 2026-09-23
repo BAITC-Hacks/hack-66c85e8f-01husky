@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Controller, useForm } from "react-hook-form";
-import { toast } from "sonner";
 import { z } from "zod";
 import { Field } from "@/components/common/field";
 import { SEGMENT_ON } from "@/components/common/segment";
@@ -41,7 +40,6 @@ export default function RegisterPage() {
         router.replace("/meetings");
         router.refresh();
       },
-      onError: (e) => toast.error(e.message),
     }),
   );
 

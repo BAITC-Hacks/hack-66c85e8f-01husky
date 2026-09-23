@@ -3,7 +3,6 @@
 import { Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCreateTask } from "@/lib/api/queries/tasks";
@@ -34,10 +33,7 @@ export function TasksPanel({
   const add = (e: React.FormEvent) => {
     e.preventDefault();
     if (text.trim().length < 3) return;
-    create.mutate(
-      { meeting_id: meetingId, text: text.trim() },
-      { onSuccess: () => setText(""), onError: (err) => toast.error(err.message) },
-    );
+    create.mutate({ meeting_id: meetingId, text: text.trim() }, { onSuccess: () => setText("") });
   };
 
   return (

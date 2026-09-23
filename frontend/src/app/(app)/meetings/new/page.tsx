@@ -62,7 +62,6 @@ export default function NewMeetingPage() {
     return form.getValues();
   };
   const go = (id: number) => router.push(`/meetings/${id}`);
-  const fail = (e: Error) => toast.error(e.message);
 
   return (
     <>
@@ -80,7 +79,7 @@ export default function NewMeetingPage() {
         {/* Protocol card */}
         <section className="bg-card shadow-soft h-fit rounded-xl border p-5 sm:p-6 lg:sticky lg:top-24">
           <div className="text-primary mb-5 flex items-center justify-between text-xs font-semibold tracking-wide uppercase">
-            <span>Хаттама · Протокол</span>
+            <span>Kenes AI · Протокол</span>
             <span>№ ———</span>
           </div>
           <div className="grid gap-4">
@@ -171,7 +170,7 @@ export default function NewMeetingPage() {
                 pending={upload.isPending}
                 onSubmit={async (file) => {
                   const v = await common();
-                  if (v) upload.mutate({ ...v, file }, { onSuccess: (m) => go(m.id), onError: fail });
+                  if (v) upload.mutate({ ...v, file }, { onSuccess: (m) => go(m.id) });
                 }}
               />
             </TabsContent>
@@ -183,9 +182,8 @@ export default function NewMeetingPage() {
                   if (!v) return null;
                   try {
                     return (await live.mutateAsync(v)).id;
-                  } catch (e) {
-                    fail(e as Error);
-                    return null;
+                  } catch {
+                    return null; // toasted by the global mutation handler
                   }
                 }}
                 onDone={go}
@@ -211,7 +209,6 @@ export default function NewMeetingPage() {
                         toast.success(t("bot.sent"));
                         go(m.id);
                       },
-                      onError: fail,
                     },
                   );
                 }}

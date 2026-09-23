@@ -28,7 +28,7 @@ import {
   TEMPLATE_SUMMARY,
 } from "./seed";
 
-const KEY = "hattama-mock-db-v2";
+const KEY = "kenes-mock-db-v3";
 
 export interface DB {
   users: (User & { password: string })[];

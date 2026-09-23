@@ -24,6 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useNotify } from "@/hooks/use-notify";
 import { downloadFile } from "@/lib/api/download";
 import { useDeleteAudio, useDeleteMeeting, useMeetingAction, useSendToSed } from "@/lib/api/queries/meetings";
 import type { ExportFormat, Locale, Meeting } from "@/lib/api/types";
@@ -45,7 +46,8 @@ export function ActionsBar({ meeting, onConfirmed }: { meeting: Meeting; onConfi
   const isDraft = meeting.status === "draft";
   const isConfirmed = meeting.status === "confirmed";
   const busy = meeting.status === "processing" || meeting.status === "uploaded";
-  const fail = (e: Error) => toast.error(e.message);
+  const notify = useNotify();
+  const te = useTranslations("errors");
 
   const doExport = async (format: ExportFormat, lang: Locale) => {
     const key = `${format}-${lang}`;
@@ -57,7 +59,7 @@ export function ActionsBar({ meeting, onConfirmed }: { meeting: Meeting; onConfi
         `protocol-${meeting.id}.${format}`,
       );
     } catch (e) {
-      fail(e as Error);
+      notify.error(e, { title: te("download.failed"), retry: () => doExport(format, lang) });
     } finally {
       setExporting(null);
     }
@@ -106,7 +108,6 @@ export function ActionsBar({ meeting, onConfirmed }: { meeting: Meeting; onConfi
           onClick={() =>
             sed.mutate(undefined, {
               onSuccess: (r) => toast.success(t("sedDone"), { description: `${t("sedRef")}: ${r.sed_ref}` }),
-              onError: fail,
             })
           }
         >
@@ -146,7 +147,6 @@ export function ActionsBar({ meeting, onConfirmed }: { meeting: Meeting; onConfi
               toast.success(t("confirmed"));
               onConfirmed();
             },
-            onError: fail,
           })
         }
       />
@@ -156,7 +156,7 @@ export function ActionsBar({ meeting, onConfirmed }: { meeting: Meeting; onConfi
         title={t("reprocessTitle")}
         body={t("reprocessBody")}
         actionLabel={t("reprocess")}
-        onConfirm={() => reprocess.mutate(undefined, { onError: fail })}
+        onConfirm={() => reprocess.mutate()}
       />
       <ConfirmAction
         open={dialog === "audio"}
@@ -165,9 +165,7 @@ export function ActionsBar({ meeting, onConfirmed }: { meeting: Meeting; onConfi
         body={t("deleteAudioBody")}
         actionLabel={t("deleteAudio")}
         destructive
-        onConfirm={() =>
-          delAudio.mutate(undefined, { onSuccess: () => toast(t("audioDeleted")), onError: fail })
-        }
+        onConfirm={() => delAudio.mutate(undefined, { onSuccess: () => toast(t("audioDeleted")) })}
       />
       <ConfirmAction
         open={dialog === "delete"}
@@ -176,9 +174,7 @@ export function ActionsBar({ meeting, onConfirmed }: { meeting: Meeting; onConfi
         body={meeting.title}
         actionLabel={t("delete")}
         destructive
-        onConfirm={() =>
-          delMeeting.mutate(meeting.id, { onSuccess: () => router.replace("/meetings"), onError: fail })
-        }
+        onConfirm={() => delMeeting.mutate(meeting.id, { onSuccess: () => router.replace("/meetings") })}
       />
     </div>
   );

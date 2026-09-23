@@ -4,7 +4,19 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 export type RecorderState = "idle" | "requesting" | "recording" | "stopped" | "denied";
 
+/** Why the microphone couldn't start. Copy lives under `errors.mic.<kind>`. */
+export type MicError = "denied" | "noDevice" | "busy" | "insecure" | "unknown";
+
 const HISTORY = 56;
+
+function micError(e: unknown): MicError {
+  if (typeof window !== "undefined" && !window.isSecureContext) return "insecure";
+  const name = e instanceof DOMException ? e.name : "";
+  if (name === "NotAllowedError" || name === "SecurityError") return "denied";
+  if (name === "NotFoundError" || name === "OverconstrainedError") return "noDevice";
+  if (name === "NotReadableError" || name === "AbortError") return "busy";
+  return "unknown";
+}
 
 function pickMime(): string | undefined {
   if (typeof MediaRecorder === "undefined") return undefined;
@@ -18,11 +30,15 @@ function pickMime(): string | undefined {
  * `onChunk` receives timeslice chunks (for WS streaming); `stop()` resolves
  * with the full Blob (for voiceprint upload).
  */
-export function useRecorder({ timeslice = 1000, onChunk }: { timeslice?: number; onChunk?: (b: Blob) => void } = {}) {
+export function useRecorder({
+  timeslice = 1000,
+  onChunk,
+}: { timeslice?: number; onChunk?: (b: Blob) => void } = {}) {
   const [state, setState] = useState<RecorderState>("idle");
   const [elapsed, setElapsed] = useState(0);
   const [levels, setLevels] = useState<number[]>(() => Array(HISTORY).fill(0));
   const [bytes, setBytes] = useState(0);
+  const [error, setError] = useState<MicError | null>(null);
 
   const rec = useRef<MediaRecorder | null>(null);
   const stream = useRef<MediaStream | null>(null);
@@ -43,9 +59,12 @@ export function useRecorder({ timeslice = 1000, onChunk }: { timeslice?: number;
 
   useEffect(() => cleanup, [cleanup]);
 
-  const start = useCallback(async () => {
+  /** Resolves with null on success, or the reason the mic couldn't start. */
+  const start = useCallback(async (): Promise<MicError | null> => {
     setState("requesting");
+    setError(null);
     try {
+      if (!navigator.mediaDevices?.getUserMedia) throw new Error("mediaDevices unavailable");
       const s = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 },
       });
@@ -85,9 +104,13 @@ export function useRecorder({ timeslice = 1000, onChunk }: { timeslice?: number;
       setBytes(0);
       r.start(timeslice);
       setState("recording");
-    } catch {
+      return null;
+    } catch (e) {
       cleanup();
+      const kind = micError(e);
+      setError(kind);
       setState("denied");
+      return kind;
     }
   }, [cleanup, timeslice]);
 
@@ -111,10 +134,11 @@ export function useRecorder({ timeslice = 1000, onChunk }: { timeslice?: number;
 
   const reset = useCallback(() => {
     setState("idle");
+    setError(null);
     setElapsed(0);
     setBytes(0);
     setLevels(Array(HISTORY).fill(0));
   }, []);
 
-  return { state, elapsed, levels, bytes, start, stop, reset };
+  return { state, error, elapsed, levels, bytes, start, stop, reset };
 }

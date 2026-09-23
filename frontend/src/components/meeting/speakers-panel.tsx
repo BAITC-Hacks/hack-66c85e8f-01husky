@@ -112,7 +112,6 @@ export function SpeakersPanel({
                 onValueChange={(v) =>
                   assign.mutate([{ speaker: r.speaker, participant_id: v === NONE ? null : Number(v) }], {
                     onSuccess: () => toast.success(t("speakerSaved")),
-                    onError: (e) => toast.error(e.message),
                   })
                 }
               >

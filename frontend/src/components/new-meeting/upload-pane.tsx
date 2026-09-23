@@ -4,14 +4,25 @@ import { FileAudio, Loader2, UploadCloud, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useNotify } from "@/hooks/use-notify";
 import { formatBytes } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-const ACCEPT = "audio/*,video/*,.mp3,.wav,.m4a,.ogg,.webm,.mp4,.mkv,.mov";
+const EXTENSIONS = [".mp3", ".wav", ".m4a", ".ogg", ".webm", ".mp4", ".mkv", ".mov"];
+const ACCEPT = ["audio/*", "video/*", ...EXTENSIONS].join(",");
+
+/** Drag-and-drop ignores `accept`, so check the type ourselves. */
+function isMediaFile(f: File): boolean {
+  if (f.type.startsWith("audio/") || f.type.startsWith("video/")) return true;
+  const name = f.name.toLowerCase();
+  return EXTENSIONS.some((ext) => name.endsWith(ext));
+}
 
 export function UploadPane({ onSubmit, pending }: { onSubmit: (file: File) => void; pending: boolean }) {
   const t = useTranslations("newMeeting.upload");
   const te = useTranslations("newMeeting.errors");
+  const tf = useTranslations("errors.file");
+  const notify = useNotify();
   const [file, setFile] = useState<File | null>(null);
   const [drag, setDrag] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,6 +30,14 @@ export function UploadPane({ onSubmit, pending }: { onSubmit: (file: File) => vo
 
   const pick = (f: File | undefined | null) => {
     if (!f) return;
+    if (!isMediaFile(f)) {
+      notify.warn(tf("unsupported"), tf("unsupportedHint"));
+      return;
+    }
+    if (f.size === 0) {
+      notify.warn(tf("empty"), tf("emptyHint"));
+      return;
+    }
     setFile(f);
     setError(null);
   };

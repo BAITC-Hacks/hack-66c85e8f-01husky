@@ -77,7 +77,6 @@ export function SummaryPanel({
                     toast.success(tc("saved"));
                     setEditing(false);
                   },
-                  onError: (e) => toast.error(e.message),
                 },
               )
             }

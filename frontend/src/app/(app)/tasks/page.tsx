@@ -4,8 +4,8 @@ import { AlarmClock, CheckCircle2, CircleDashed, FilterX, Quote, TriangleAlert }
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
 import { UrgencyMark } from "@/components/common/badges";
+import { QueryError } from "@/components/common/error-screen";
 import { DeadlineLabel, EmptyState, PageHeader, ParticipantAvatar } from "@/components/common/bits";
 import { StatusSelect } from "@/components/tasks/task-selects";
 import { Label } from "@/components/ui/label";
@@ -84,7 +84,7 @@ export default function TasksPage() {
   const [dueSoon, setDueSoon] = useState(false);
   const set = <K extends keyof TaskFilters>(k: K, v: TaskFilters[K]) => setFilters((f) => ({ ...f, [k]: v }));
 
-  const { data: tasks, isLoading } = useTasks(filters);
+  const { data: tasks, isLoading, error, refetch } = useTasks(filters);
   const { data: stats } = useTaskStats();
   const { data: participants = [] } = useParticipants();
   const { data: directions = [] } = useDirections();
@@ -210,6 +210,8 @@ export default function TasksPage() {
       {/* Table */}
       {isLoading ? (
         <Skeleton className="h-80 rounded-lg" />
+      ) : error ? (
+        <QueryError error={error} onRetry={() => refetch()} />
       ) : rows.length === 0 ? (
         <EmptyState title={t("empty")} />
       ) : (
@@ -253,9 +255,7 @@ export default function TasksPage() {
                     <StatusSelect
                       value={task.status}
                       disabled={update.isPending}
-                      onChange={(status) =>
-                        update.mutate({ id: task.id, status }, { onError: (e) => toast.error(e.message) })
-                      }
+                      onChange={(status) => update.mutate({ id: task.id, status })}
                     />
                   </div>
                 </li>
@@ -322,9 +322,7 @@ export default function TasksPage() {
                         <StatusSelect
                           value={task.status}
                           disabled={update.isPending}
-                          onChange={(status) =>
-                            update.mutate({ id: task.id, status }, { onError: (e) => toast.error(e.message) })
-                          }
+                          onChange={(status) => update.mutate({ id: task.id, status })}
                         />
                       </TableCell>
                     </TableRow>

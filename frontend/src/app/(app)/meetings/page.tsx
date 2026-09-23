@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { EmptyState, PageHeader } from "@/components/common/bits";
+import { QueryError } from "@/components/common/error-screen";
 import { MeetingRow } from "@/components/meetings/meeting-row";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,7 +20,7 @@ export default function MeetingsPage() {
   const tc = useTranslations("common");
   const tst = useTranslations("meetingStatus");
   const [status, setStatus] = useState<MeetingStatus | "all">("all");
-  const { data, isLoading } = useMeetings();
+  const { data, isLoading, error, refetch } = useMeetings();
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: data?.length ?? 0 };
@@ -75,6 +76,8 @@ export default function MeetingsPage() {
             <Skeleton key={i} className="h-24 rounded-lg" />
           ))}
         </div>
+      ) : error ? (
+        <QueryError error={error} onRetry={() => refetch()} />
       ) : list.length === 0 ? (
         <EmptyState
           title={t("empty")}
