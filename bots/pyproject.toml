@@ -1,0 +1,23 @@
+[project]
+name = "bots"
+version = "0.1.0"
+description = "Meeting bot: joins Google Meet / Zoom / Teams web clients, records audio, uploads to the backend"
+requires-python = ">=3.12"
+dependencies = [
+    "playwright>=1.47",
+    "httpx>=0.27",
+]
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["bots"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"

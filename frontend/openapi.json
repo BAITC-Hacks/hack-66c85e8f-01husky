@@ -1,0 +1,3905 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "Meeting Protocol API",
+  "version": "0.1.0"
+ },
+ "paths": {
+  "/api/v1/health": {
+   "get": {
+    "summary": "Health",
+    "operationId": "health_api_v1_health_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": {
+          "anyOf": [
+           {
+            "type": "string"
+           },
+           {
+            "type": "boolean"
+           }
+          ]
+         },
+         "type": "object",
+         "title": "Response Health Api V1 Health Get"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/auth/register": {
+   "post": {
+    "tags": [
+     "auth"
+    ],
+    "summary": "Register",
+    "operationId": "register_api_v1_auth_register_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/RegisterIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/UserOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/auth/login": {
+   "post": {
+    "tags": [
+     "auth"
+    ],
+    "summary": "Login",
+    "operationId": "login_api_v1_auth_login_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/LoginIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/UserOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/auth/logout": {
+   "post": {
+    "tags": [
+     "auth"
+    ],
+    "summary": "Logout",
+    "operationId": "logout_api_v1_auth_logout_post",
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     }
+    }
+   }
+  },
+  "/api/v1/auth/me": {
+   "get": {
+    "tags": [
+     "auth"
+    ],
+    "summary": "Me",
+    "operationId": "me_api_v1_auth_me_get",
+    "parameters": [
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/UserOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/directions": {
+   "get": {
+    "tags": [
+     "directions"
+    ],
+    "summary": "List Directions",
+    "operationId": "list_directions_api_v1_directions_get",
+    "parameters": [
+     {
+      "name": "include_inactive",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": false,
+       "title": "Include Inactive"
+      }
+     },
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/DirectionOut"
+         },
+         "title": "Response List Directions Api V1 Directions Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "post": {
+    "tags": [
+     "directions"
+    ],
+    "summary": "Create Direction",
+    "operationId": "create_direction_api_v1_directions_post",
+    "parameters": [
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/DirectionIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DirectionOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/directions/{direction_id}": {
+   "patch": {
+    "tags": [
+     "directions"
+    ],
+    "summary": "Patch Direction",
+    "operationId": "patch_direction_api_v1_directions__direction_id__patch",
+    "parameters": [
+     {
+      "name": "direction_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Direction Id"
+      }
+     },
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/DirectionPatch"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DirectionOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/meetings/{meeting_id}/export": {
+   "get": {
+    "tags": [
+     "exports"
+    ],
+    "summary": "Export Protocol",
+    "operationId": "export_protocol_api_v1_meetings__meeting_id__export_get",
+    "parameters": [
+     {
+      "name": "meeting_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Meeting Id"
+      }
+     },
+     {
+      "name": "format",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "enum": [
+        "docx",
+        "pdf"
+       ],
+       "type": "string",
+       "default": "docx",
+       "title": "Format"
+      }
+     },
+     {
+      "name": "lang",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "enum": [
+          "ru",
+          "kk"
+         ],
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Lang"
+      }
+     },
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/meetings/{meeting_id}/sed": {
+   "post": {
+    "tags": [
+     "exports"
+    ],
+    "summary": "Push To Sed",
+    "operationId": "push_to_sed_api_v1_meetings__meeting_id__sed_post",
+    "parameters": [
+     {
+      "name": "meeting_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Meeting Id"
+      }
+     },
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": {
+          "type": "string"
+         },
+         "title": "Response Push To Sed Api V1 Meetings  Meeting Id  Sed Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/meetings": {
+   "post": {
+    "tags": [
+     "meetings"
+    ],
+    "summary": "Create Meeting",
+    "operationId": "create_meeting_api_v1_meetings_post",
+    "parameters": [
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "multipart/form-data": {
+       "schema": {
+        "$ref": "#/components/schemas/Body_create_meeting_api_v1_meetings_post"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MeetingOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "get": {
+    "tags": [
+     "meetings"
+    ],
+    "summary": "List Meetings",
+    "operationId": "list_meetings_api_v1_meetings_get",
+    "parameters": [
+     {
+      "name": "status",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "$ref": "#/components/schemas/MeetingStatus"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Status"
+      }
+     },
+     {
+      "name": "date_from",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date From"
+      }
+     },
+     {
+      "name": "date_to",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date To"
+      }
+     },
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/MeetingOut"
+         },
+         "title": "Response List Meetings Api V1 Meetings Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/meetings/live": {
+   "post": {
+    "tags": [
+     "meetings"
+    ],
+    "summary": "Create Live Meeting",
+    "description": "Create a meeting to be fed by the browser over WS /meetings/{id}/live.",
+    "operationId": "create_live_meeting_api_v1_meetings_live_post",
+    "parameters": [
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/LiveMeetingIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MeetingOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/meetings/bot": {
+   "post": {
+    "tags": [
+     "meetings"
+    ],
+    "summary": "Create Bot Meeting",
+    "description": "Create a meeting and dispatch the bot to join the call.",
+    "operationId": "create_bot_meeting_api_v1_meetings_bot_post",
+    "parameters": [
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/BotMeetingIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MeetingOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/meetings/{meeting_id}/audio": {
+   "post": {
+    "tags": [
+     "meetings"
+    ],
+    "summary": "Upload Meeting Audio",
+    "description": "Attach a recording to an existing meeting (bot callback or manual re-upload).\n\nAuth: either the bot token header or a logged-in editor.",
+    "operationId": "upload_meeting_audio_api_v1_meetings__meeting_id__audio_post",
+    "parameters": [
+     {
+      "name": "meeting_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Meeting Id"
+      }
+     },
+     {
+      "name": "x-bot-token",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Bot-Token"
+      }
+     },
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "multipart/form-data": {
+       "schema": {
+        "$ref": "#/components/schemas/Body_upload_meeting_audio_api_v1_meetings__meeting_id__audio_post"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MeetingOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "delete": {
+    "tags": [
+     "meetings"
+    ],
+    "summary": "Delete Audio",
+    "operationId": "delete_audio_api_v1_meetings__meeting_id__audio_delete",
+    "parameters": [
+     {
+      "name": "meeting_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Meeting Id"
+      }
+     },
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/meetings/{meeting_id}": {
+   "get": {
+    "tags": [
+     "meetings"
+    ],
+    "summary": "Get Meeting",
+    "operationId": "get_meeting_api_v1_meetings__meeting_id__get",
+    "parameters": [
+     {
+      "name": "meeting_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Meeting Id"
+      }
+     },
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MeetingDetail"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "patch": {
+    "tags": [
+     "meetings"
+    ],
+    "summary": "Patch Meeting",
+    "operationId": "patch_meeting_api_v1_meetings__meeting_id__patch",
+    "parameters": [
+     {
+      "name": "meeting_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Meeting Id"
+      }
+     },
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/MeetingPatch"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MeetingDetail"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "delete": {
+    "tags": [
+     "meetings"
+    ],
+    "summary": "Delete Meeting",
+    "operationId": "delete_meeting_api_v1_meetings__meeting_id__delete",
+    "parameters": [
+     {
+      "name": "meeting_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Meeting Id"
+      }
+     },
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/meetings/{meeting_id}/speakers": {
+   "put": {
+    "tags": [
+     "meetings"
+    ],
+    "summary": "Set Speakers",
+    "operationId": "set_speakers_api_v1_meetings__meeting_id__speakers_put",
+    "parameters": [
+     {
+      "name": "meeting_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Meeting Id"
+      }
+     },
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "array",
+        "items": {
+         "$ref": "#/components/schemas/SpeakerMapIn"
+        },
+        "title": "Body"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MeetingDetail"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/meetings/{meeting_id}/confirm": {
+   "post": {
+    "tags": [
+     "meetings"
+    ],
+    "summary": "Confirm Meeting",
+    "operationId": "confirm_meeting_api_v1_meetings__meeting_id__confirm_post",
+    "parameters": [
+     {
+      "name": "meeting_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Meeting Id"
+      }
+     },
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MeetingDetail"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/meetings/{meeting_id}/reprocess": {
+   "post": {
+    "tags": [
+     "meetings"
+    ],
+    "summary": "Reprocess Meeting",
+    "operationId": "reprocess_meeting_api_v1_meetings__meeting_id__reprocess_post",
+    "parameters": [
+     {
+      "name": "meeting_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Meeting Id"
+      }
+     },
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MeetingOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/notifications": {
+   "get": {
+    "tags": [
+     "notifications"
+    ],
+    "summary": "List Notifications",
+    "operationId": "list_notifications_api_v1_notifications_get",
+    "parameters": [
+     {
+      "name": "unread",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": false,
+       "title": "Unread"
+      }
+     },
+     {
+      "name": "limit",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "default": 50,
+       "title": "Limit"
+      }
+     },
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/NotificationOut"
+         },
+         "title": "Response List Notifications Api V1 Notifications Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/notifications/unread-count": {
+   "get": {
+    "tags": [
+     "notifications"
+    ],
+    "summary": "Unread Count",
+    "operationId": "unread_count_api_v1_notifications_unread_count_get",
+    "parameters": [
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/UnreadCount"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/notifications/{notification_id}/read": {
+   "post": {
+    "tags": [
+     "notifications"
+    ],
+    "summary": "Mark Read",
+    "operationId": "mark_read_api_v1_notifications__notification_id__read_post",
+    "parameters": [
+     {
+      "name": "notification_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Notification Id"
+      }
+     },
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/NotificationOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/notifications/read-all": {
+   "post": {
+    "tags": [
+     "notifications"
+    ],
+    "summary": "Mark All Read",
+    "operationId": "mark_all_read_api_v1_notifications_read_all_post",
+    "parameters": [
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/UnreadCount"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/participants": {
+   "get": {
+    "tags": [
+     "participants"
+    ],
+    "summary": "List Participants",
+    "operationId": "list_participants_api_v1_participants_get",
+    "parameters": [
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/ParticipantOut"
+         },
+         "title": "Response List Participants Api V1 Participants Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "post": {
+    "tags": [
+     "participants"
+    ],
+    "summary": "Create Participant",
+    "operationId": "create_participant_api_v1_participants_post",
+    "parameters": [
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ParticipantIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ParticipantOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/participants/{participant_id}": {
+   "patch": {
+    "tags": [
+     "participants"
+    ],
+    "summary": "Patch Participant",
+    "operationId": "patch_participant_api_v1_participants__participant_id__patch",
+    "parameters": [
+     {
+      "name": "participant_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Participant Id"
+      }
+     },
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ParticipantPatch"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ParticipantOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "delete": {
+    "tags": [
+     "participants"
+    ],
+    "summary": "Delete Participant",
+    "operationId": "delete_participant_api_v1_participants__participant_id__delete",
+    "parameters": [
+     {
+      "name": "participant_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Participant Id"
+      }
+     },
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/participants/{participant_id}/voiceprint": {
+   "post": {
+    "tags": [
+     "participants"
+    ],
+    "summary": "Enroll Voiceprint",
+    "operationId": "enroll_voiceprint_api_v1_participants__participant_id__voiceprint_post",
+    "parameters": [
+     {
+      "name": "participant_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Participant Id"
+      }
+     },
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "multipart/form-data": {
+       "schema": {
+        "$ref": "#/components/schemas/Body_enroll_voiceprint_api_v1_participants__participant_id__voiceprint_post"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/VoiceprintOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "delete": {
+    "tags": [
+     "participants"
+    ],
+    "summary": "Delete Voiceprint",
+    "operationId": "delete_voiceprint_api_v1_participants__participant_id__voiceprint_delete",
+    "parameters": [
+     {
+      "name": "participant_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Participant Id"
+      }
+     },
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/tasks": {
+   "get": {
+    "tags": [
+     "tasks"
+    ],
+    "summary": "List Tasks",
+    "operationId": "list_tasks_api_v1_tasks_get",
+    "parameters": [
+     {
+      "name": "status",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "$ref": "#/components/schemas/TaskStatus"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Status"
+      }
+     },
+     {
+      "name": "assignee_id",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Assignee Id"
+      }
+     },
+     {
+      "name": "direction_id",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Direction Id"
+      }
+     },
+     {
+      "name": "urgency",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "$ref": "#/components/schemas/Urgency"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Urgency"
+      }
+     },
+     {
+      "name": "meeting_id",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Meeting Id"
+      }
+     },
+     {
+      "name": "mine",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": false,
+       "title": "Mine"
+      }
+     },
+     {
+      "name": "include_draft",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": true,
+       "title": "Include Draft"
+      }
+     },
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/TaskOut"
+         },
+         "title": "Response List Tasks Api V1 Tasks Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "post": {
+    "tags": [
+     "tasks"
+    ],
+    "summary": "Create Task",
+    "operationId": "create_task_api_v1_tasks_post",
+    "parameters": [
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/TaskCreate"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TaskOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/tasks/stats": {
+   "get": {
+    "tags": [
+     "tasks"
+    ],
+    "summary": "Task Stats",
+    "operationId": "task_stats_api_v1_tasks_stats_get",
+    "parameters": [
+     {
+      "name": "mine",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": false,
+       "title": "Mine"
+      }
+     },
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TaskStats"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/tasks/{task_id}": {
+   "patch": {
+    "tags": [
+     "tasks"
+    ],
+    "summary": "Patch Task",
+    "operationId": "patch_task_api_v1_tasks__task_id__patch",
+    "parameters": [
+     {
+      "name": "task_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Task Id"
+      }
+     },
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/TaskPatch"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TaskOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "delete": {
+    "tags": [
+     "tasks"
+    ],
+    "summary": "Delete Task",
+    "operationId": "delete_task_api_v1_tasks__task_id__delete",
+    "parameters": [
+     {
+      "name": "task_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Task Id"
+      }
+     },
+     {
+      "name": "access_token",
+      "in": "cookie",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Access Token"
+      }
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "components": {
+  "schemas": {
+   "Body_create_meeting_api_v1_meetings_post": {
+    "properties": {
+     "title": {
+      "type": "string",
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Title"
+     },
+     "meeting_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Meeting Date"
+     },
+     "file": {
+      "type": "string",
+      "contentMediaType": "application/octet-stream",
+      "title": "File"
+     },
+     "output_language": {
+      "$ref": "#/components/schemas/Locale",
+      "default": "ru"
+     },
+     "participant_ids": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "integer"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Participant Ids"
+     }
+    },
+    "type": "object",
+    "required": [
+     "title",
+     "meeting_date",
+     "file"
+    ],
+    "title": "Body_create_meeting_api_v1_meetings_post"
+   },
+   "Body_enroll_voiceprint_api_v1_participants__participant_id__voiceprint_post": {
+    "properties": {
+     "file": {
+      "type": "string",
+      "contentMediaType": "application/octet-stream",
+      "title": "File"
+     }
+    },
+    "type": "object",
+    "required": [
+     "file"
+    ],
+    "title": "Body_enroll_voiceprint_api_v1_participants__participant_id__voiceprint_post"
+   },
+   "Body_upload_meeting_audio_api_v1_meetings__meeting_id__audio_post": {
+    "properties": {
+     "file": {
+      "type": "string",
+      "contentMediaType": "application/octet-stream",
+      "title": "File"
+     }
+    },
+    "type": "object",
+    "required": [
+     "file"
+    ],
+    "title": "Body_upload_meeting_audio_api_v1_meetings__meeting_id__audio_post"
+   },
+   "BotMeetingIn": {
+    "properties": {
+     "title": {
+      "type": "string",
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Title"
+     },
+     "meeting_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Meeting Date"
+     },
+     "output_language": {
+      "$ref": "#/components/schemas/Locale",
+      "default": "ru"
+     },
+     "participant_ids": {
+      "items": {
+       "type": "integer"
+      },
+      "type": "array",
+      "title": "Participant Ids"
+     },
+     "platform": {
+      "type": "string",
+      "pattern": "^(meet|zoom|teams)$",
+      "title": "Platform"
+     },
+     "url": {
+      "type": "string",
+      "maxLength": 1000,
+      "minLength": 8,
+      "title": "Url"
+     }
+    },
+    "type": "object",
+    "required": [
+     "title",
+     "meeting_date",
+     "platform",
+     "url"
+    ],
+    "title": "BotMeetingIn"
+   },
+   "DirectionIn": {
+    "properties": {
+     "name": {
+      "type": "string",
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Name"
+     },
+     "is_active": {
+      "type": "boolean",
+      "title": "Is Active",
+      "default": true
+     }
+    },
+    "type": "object",
+    "required": [
+     "name"
+    ],
+    "title": "DirectionIn"
+   },
+   "DirectionOut": {
+    "properties": {
+     "id": {
+      "type": "integer",
+      "title": "Id"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "is_active": {
+      "type": "boolean",
+      "title": "Is Active"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "name",
+     "is_active"
+    ],
+    "title": "DirectionOut"
+   },
+   "DirectionPatch": {
+    "properties": {
+     "name": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 100,
+        "minLength": 1
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "is_active": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Is Active"
+     }
+    },
+    "type": "object",
+    "title": "DirectionPatch"
+   },
+   "HTTPValidationError": {
+    "properties": {
+     "detail": {
+      "items": {
+       "$ref": "#/components/schemas/ValidationError"
+      },
+      "type": "array",
+      "title": "Detail"
+     }
+    },
+    "type": "object",
+    "title": "HTTPValidationError"
+   },
+   "LiveMeetingIn": {
+    "properties": {
+     "title": {
+      "type": "string",
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Title"
+     },
+     "meeting_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Meeting Date"
+     },
+     "output_language": {
+      "$ref": "#/components/schemas/Locale",
+      "default": "ru"
+     },
+     "participant_ids": {
+      "items": {
+       "type": "integer"
+      },
+      "type": "array",
+      "title": "Participant Ids"
+     }
+    },
+    "type": "object",
+    "required": [
+     "title",
+     "meeting_date"
+    ],
+    "title": "LiveMeetingIn"
+   },
+   "Locale": {
+    "type": "string",
+    "enum": [
+     "ru",
+     "kk"
+    ],
+    "title": "Locale"
+   },
+   "LoginIn": {
+    "properties": {
+     "email": {
+      "type": "string",
+      "format": "email",
+      "title": "Email"
+     },
+     "password": {
+      "type": "string",
+      "title": "Password"
+     }
+    },
+    "type": "object",
+    "required": [
+     "email",
+     "password"
+    ],
+    "title": "LoginIn"
+   },
+   "MeetingDetail": {
+    "properties": {
+     "id": {
+      "type": "integer",
+      "title": "Id"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "meeting_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Meeting Date"
+     },
+     "source": {
+      "$ref": "#/components/schemas/MeetingSource"
+     },
+     "platform": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Platform"
+     },
+     "audio_path": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Audio Path"
+     },
+     "duration_sec": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Duration Sec"
+     },
+     "output_language": {
+      "$ref": "#/components/schemas/Locale"
+     },
+     "status": {
+      "$ref": "#/components/schemas/MeetingStatus"
+     },
+     "progress_stage": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Progress Stage"
+     },
+     "progress_pct": {
+      "type": "number",
+      "title": "Progress Pct"
+     },
+     "error": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Error"
+     },
+     "sed_ref": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sed Ref"
+     },
+     "created_by": {
+      "type": "integer",
+      "title": "Created By"
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+     },
+     "confirmed_at": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Confirmed At"
+     },
+     "tasks_count": {
+      "type": "integer",
+      "title": "Tasks Count",
+      "default": 0
+     },
+     "participants_count": {
+      "type": "integer",
+      "title": "Participants Count",
+      "default": 0
+     },
+     "summary": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Summary"
+     },
+     "language_stats": {
+      "anyOf": [
+       {
+        "additionalProperties": true,
+        "type": "object"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Language Stats"
+     },
+     "model_info": {
+      "anyOf": [
+       {
+        "additionalProperties": true,
+        "type": "object"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Model Info"
+     },
+     "participants": {
+      "items": {
+       "$ref": "#/components/schemas/ParticipantOut"
+      },
+      "type": "array",
+      "title": "Participants"
+     },
+     "segments": {
+      "items": {
+       "$ref": "#/components/schemas/SegmentOut"
+      },
+      "type": "array",
+      "title": "Segments"
+     },
+     "speaker_map": {
+      "items": {
+       "$ref": "#/components/schemas/SpeakerMapOut"
+      },
+      "type": "array",
+      "title": "Speaker Map"
+     },
+     "tasks": {
+      "items": {
+       "$ref": "#/components/schemas/TaskOut"
+      },
+      "type": "array",
+      "title": "Tasks"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "title",
+     "meeting_date",
+     "source",
+     "platform",
+     "audio_path",
+     "duration_sec",
+     "output_language",
+     "status",
+     "progress_stage",
+     "progress_pct",
+     "error",
+     "sed_ref",
+     "created_by",
+     "created_at",
+     "confirmed_at",
+     "summary",
+     "language_stats",
+     "model_info",
+     "participants",
+     "segments",
+     "speaker_map",
+     "tasks"
+    ],
+    "title": "MeetingDetail"
+   },
+   "MeetingOut": {
+    "properties": {
+     "id": {
+      "type": "integer",
+      "title": "Id"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "meeting_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Meeting Date"
+     },
+     "source": {
+      "$ref": "#/components/schemas/MeetingSource"
+     },
+     "platform": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Platform"
+     },
+     "audio_path": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Audio Path"
+     },
+     "duration_sec": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Duration Sec"
+     },
+     "output_language": {
+      "$ref": "#/components/schemas/Locale"
+     },
+     "status": {
+      "$ref": "#/components/schemas/MeetingStatus"
+     },
+     "progress_stage": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Progress Stage"
+     },
+     "progress_pct": {
+      "type": "number",
+      "title": "Progress Pct"
+     },
+     "error": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Error"
+     },
+     "sed_ref": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sed Ref"
+     },
+     "created_by": {
+      "type": "integer",
+      "title": "Created By"
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+     },
+     "confirmed_at": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Confirmed At"
+     },
+     "tasks_count": {
+      "type": "integer",
+      "title": "Tasks Count",
+      "default": 0
+     },
+     "participants_count": {
+      "type": "integer",
+      "title": "Participants Count",
+      "default": 0
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "title",
+     "meeting_date",
+     "source",
+     "platform",
+     "audio_path",
+     "duration_sec",
+     "output_language",
+     "status",
+     "progress_stage",
+     "progress_pct",
+     "error",
+     "sed_ref",
+     "created_by",
+     "created_at",
+     "confirmed_at"
+    ],
+    "title": "MeetingOut"
+   },
+   "MeetingPatch": {
+    "properties": {
+     "title": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 500,
+        "minLength": 1
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Title"
+     },
+     "meeting_date": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Meeting Date"
+     },
+     "summary": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Summary"
+     },
+     "output_language": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/Locale"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "participant_ids": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "integer"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Participant Ids"
+     }
+    },
+    "type": "object",
+    "title": "MeetingPatch"
+   },
+   "MeetingSource": {
+    "type": "string",
+    "enum": [
+     "upload",
+     "live",
+     "bot"
+    ],
+    "title": "MeetingSource"
+   },
+   "MeetingStatus": {
+    "type": "string",
+    "enum": [
+     "uploaded",
+     "processing",
+     "draft",
+     "confirmed",
+     "failed"
+    ],
+    "title": "MeetingStatus"
+   },
+   "NotificationKind": {
+    "type": "string",
+    "enum": [
+     "assigned",
+     "due_soon",
+     "overdue",
+     "protocol_ready"
+    ],
+    "title": "NotificationKind"
+   },
+   "NotificationOut": {
+    "properties": {
+     "id": {
+      "type": "integer",
+      "title": "Id"
+     },
+     "kind": {
+      "$ref": "#/components/schemas/NotificationKind"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "body": {
+      "type": "string",
+      "title": "Body"
+     },
+     "task_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Task Id"
+     },
+     "meeting_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Meeting Id"
+     },
+     "read_at": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Read At"
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "kind",
+     "title",
+     "body",
+     "task_id",
+     "meeting_id",
+     "read_at",
+     "created_at"
+    ],
+    "title": "NotificationOut"
+   },
+   "ParticipantIn": {
+    "properties": {
+     "name": {
+      "type": "string",
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Name"
+     },
+     "email": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "email"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Email"
+     },
+     "position": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 255
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Position"
+     }
+    },
+    "type": "object",
+    "required": [
+     "name"
+    ],
+    "title": "ParticipantIn"
+   },
+   "ParticipantOut": {
+    "properties": {
+     "id": {
+      "type": "integer",
+      "title": "Id"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "email": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "email"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Email"
+     },
+     "position": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Position"
+     },
+     "user_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "User Id"
+     },
+     "has_voiceprint": {
+      "type": "boolean",
+      "title": "Has Voiceprint",
+      "default": false
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "name",
+     "email",
+     "position",
+     "user_id",
+     "created_at"
+    ],
+    "title": "ParticipantOut"
+   },
+   "ParticipantPatch": {
+    "properties": {
+     "name": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 255,
+        "minLength": 1
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "email": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "email"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Email"
+     },
+     "position": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 255
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Position"
+     }
+    },
+    "type": "object",
+    "title": "ParticipantPatch"
+   },
+   "RegisterIn": {
+    "properties": {
+     "email": {
+      "type": "string",
+      "format": "email",
+      "title": "Email"
+     },
+     "password": {
+      "type": "string",
+      "maxLength": 128,
+      "minLength": 6,
+      "title": "Password"
+     },
+     "name": {
+      "type": "string",
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Name"
+     },
+     "locale": {
+      "$ref": "#/components/schemas/Locale",
+      "default": "ru"
+     }
+    },
+    "type": "object",
+    "required": [
+     "email",
+     "password",
+     "name"
+    ],
+    "title": "RegisterIn"
+   },
+   "SegmentOut": {
+    "properties": {
+     "idx": {
+      "type": "integer",
+      "title": "Idx"
+     },
+     "start": {
+      "type": "number",
+      "title": "Start"
+     },
+     "end": {
+      "type": "number",
+      "title": "End"
+     },
+     "speaker": {
+      "type": "string",
+      "title": "Speaker"
+     },
+     "text": {
+      "type": "string",
+      "title": "Text"
+     },
+     "lang": {
+      "type": "string",
+      "title": "Lang"
+     }
+    },
+    "type": "object",
+    "required": [
+     "idx",
+     "start",
+     "end",
+     "speaker",
+     "text",
+     "lang"
+    ],
+    "title": "SegmentOut"
+   },
+   "SpeakerMapIn": {
+    "properties": {
+     "speaker": {
+      "type": "string",
+      "title": "Speaker"
+     },
+     "participant_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Participant Id"
+     }
+    },
+    "type": "object",
+    "required": [
+     "speaker",
+     "participant_id"
+    ],
+    "title": "SpeakerMapIn"
+   },
+   "SpeakerMapOut": {
+    "properties": {
+     "speaker": {
+      "type": "string",
+      "title": "Speaker"
+     },
+     "participant_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Participant Id"
+     },
+     "source": {
+      "$ref": "#/components/schemas/SpeakerSource"
+     },
+     "confidence": {
+      "type": "number",
+      "title": "Confidence"
+     }
+    },
+    "type": "object",
+    "required": [
+     "speaker",
+     "participant_id",
+     "source",
+     "confidence"
+    ],
+    "title": "SpeakerMapOut"
+   },
+   "SpeakerSource": {
+    "type": "string",
+    "enum": [
+     "voiceprint",
+     "llm",
+     "manual",
+     "none"
+    ],
+    "title": "SpeakerSource"
+   },
+   "TaskCreate": {
+    "properties": {
+     "meeting_id": {
+      "type": "integer",
+      "title": "Meeting Id"
+     },
+     "text": {
+      "type": "string",
+      "minLength": 1,
+      "title": "Text"
+     },
+     "assignee_participant_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Assignee Participant Id"
+     },
+     "assignee_name": {
+      "type": "string",
+      "title": "Assignee Name",
+      "default": ""
+     },
+     "deadline": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Deadline"
+     },
+     "deadline_raw": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Deadline Raw"
+     },
+     "urgency": {
+      "$ref": "#/components/schemas/Urgency",
+      "default": "normal"
+     },
+     "direction_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Direction Id"
+     },
+     "quote": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Quote"
+     },
+     "segment_idx": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Segment Idx"
+     }
+    },
+    "type": "object",
+    "required": [
+     "meeting_id",
+     "text"
+    ],
+    "title": "TaskCreate"
+   },
+   "TaskOut": {
+    "properties": {
+     "id": {
+      "type": "integer",
+      "title": "Id"
+     },
+     "meeting_id": {
+      "type": "integer",
+      "title": "Meeting Id"
+     },
+     "assignee_participant_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Assignee Participant Id"
+     },
+     "assignee_name": {
+      "type": "string",
+      "title": "Assignee Name"
+     },
+     "text": {
+      "type": "string",
+      "title": "Text"
+     },
+     "deadline": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Deadline"
+     },
+     "deadline_raw": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Deadline Raw"
+     },
+     "urgency": {
+      "$ref": "#/components/schemas/Urgency"
+     },
+     "direction_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Direction Id"
+     },
+     "direction_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Direction Name"
+     },
+     "quote": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Quote"
+     },
+     "segment_idx": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Segment Idx"
+     },
+     "confidence": {
+      "type": "number",
+      "title": "Confidence"
+     },
+     "status": {
+      "$ref": "#/components/schemas/TaskStatus"
+     },
+     "sed_ref": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sed Ref"
+     },
+     "meeting_title": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Meeting Title"
+     },
+     "meeting_date": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Meeting Date"
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+     },
+     "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Updated At"
+     },
+     "done_at": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Done At"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "meeting_id",
+     "assignee_participant_id",
+     "assignee_name",
+     "text",
+     "deadline",
+     "deadline_raw",
+     "urgency",
+     "direction_id",
+     "quote",
+     "segment_idx",
+     "confidence",
+     "status",
+     "sed_ref",
+     "created_at",
+     "updated_at",
+     "done_at"
+    ],
+    "title": "TaskOut"
+   },
+   "TaskPatch": {
+    "properties": {
+     "text": {
+      "anyOf": [
+       {
+        "type": "string",
+        "minLength": 1
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Text"
+     },
+     "assignee_participant_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Assignee Participant Id"
+     },
+     "assignee_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Assignee Name"
+     },
+     "deadline": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Deadline"
+     },
+     "deadline_raw": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Deadline Raw"
+     },
+     "urgency": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/Urgency"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "direction_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Direction Id"
+     },
+     "status": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/TaskStatus"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     }
+    },
+    "type": "object",
+    "title": "TaskPatch"
+   },
+   "TaskStats": {
+    "properties": {
+     "draft": {
+      "type": "integer",
+      "title": "Draft",
+      "default": 0
+     },
+     "confirmed": {
+      "type": "integer",
+      "title": "Confirmed",
+      "default": 0
+     },
+     "in_progress": {
+      "type": "integer",
+      "title": "In Progress",
+      "default": 0
+     },
+     "done": {
+      "type": "integer",
+      "title": "Done",
+      "default": 0
+     },
+     "overdue": {
+      "type": "integer",
+      "title": "Overdue",
+      "default": 0
+     },
+     "due_soon": {
+      "type": "integer",
+      "title": "Due Soon",
+      "default": 0
+     },
+     "total": {
+      "type": "integer",
+      "title": "Total",
+      "default": 0
+     }
+    },
+    "type": "object",
+    "title": "TaskStats"
+   },
+   "TaskStatus": {
+    "type": "string",
+    "enum": [
+     "draft",
+     "confirmed",
+     "in_progress",
+     "done",
+     "overdue"
+    ],
+    "title": "TaskStatus"
+   },
+   "UnreadCount": {
+    "properties": {
+     "unread": {
+      "type": "integer",
+      "title": "Unread"
+     }
+    },
+    "type": "object",
+    "required": [
+     "unread"
+    ],
+    "title": "UnreadCount"
+   },
+   "Urgency": {
+    "type": "string",
+    "enum": [
+     "low",
+     "normal",
+     "high",
+     "critical"
+    ],
+    "title": "Urgency"
+   },
+   "UserOut": {
+    "properties": {
+     "id": {
+      "type": "integer",
+      "title": "Id"
+     },
+     "email": {
+      "type": "string",
+      "format": "email",
+      "title": "Email"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "role": {
+      "$ref": "#/components/schemas/UserRole"
+     },
+     "locale": {
+      "$ref": "#/components/schemas/Locale"
+     },
+     "participant_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Participant Id"
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "email",
+     "name",
+     "role",
+     "locale",
+     "created_at"
+    ],
+    "title": "UserOut"
+   },
+   "UserRole": {
+    "type": "string",
+    "enum": [
+     "user",
+     "admin"
+    ],
+    "title": "UserRole"
+   },
+   "ValidationError": {
+    "properties": {
+     "loc": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "integer"
+        }
+       ]
+      },
+      "type": "array",
+      "title": "Location"
+     },
+     "msg": {
+      "type": "string",
+      "title": "Message"
+     },
+     "type": {
+      "type": "string",
+      "title": "Error Type"
+     },
+     "input": {
+      "title": "Input"
+     },
+     "ctx": {
+      "type": "object",
+      "title": "Context"
+     }
+    },
+    "type": "object",
+    "required": [
+     "loc",
+     "msg",
+     "type"
+    ],
+    "title": "ValidationError"
+   },
+   "VoiceprintOut": {
+    "properties": {
+     "ok": {
+      "type": "boolean",
+      "title": "Ok"
+     },
+     "embedding_dim": {
+      "type": "integer",
+      "title": "Embedding Dim"
+     }
+    },
+    "type": "object",
+    "required": [
+     "ok",
+     "embedding_dim"
+    ],
+    "title": "VoiceprintOut"
+   }
+  }
+ }
+}

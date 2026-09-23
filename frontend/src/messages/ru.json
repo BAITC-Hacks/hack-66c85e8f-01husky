@@ -1,0 +1,77 @@
+{
+  "nav": {
+    "meetings": "Совещания",
+    "tasks": "Поручения",
+    "participants": "Участники",
+    "directions": "Направления",
+    "login": "Войти",
+    "logout": "Выйти",
+    "notifications": "Уведомления"
+  },
+  "auth": {
+    "email": "Email",
+    "password": "Пароль",
+    "name": "Имя",
+    "login": "Войти",
+    "register": "Зарегистрироваться",
+    "noAccount": "Нет аккаунта?",
+    "haveAccount": "Уже есть аккаунт?"
+  },
+  "meetings": {
+    "title": "Совещания",
+    "new": "Новое совещание",
+    "upload": "Загрузить файл",
+    "record": "Записать",
+    "bot": "Подключить бота",
+    "recordingBanner": "Ведётся запись. Речь транскрибируется и анализируется ИИ.",
+    "status": {
+      "uploaded": "Загружено",
+      "processing": "Обработка",
+      "draft": "Черновик",
+      "confirmed": "Подтверждено",
+      "failed": "Ошибка"
+    },
+    "speakers": "Спикеры",
+    "transcript": "Транскрипт",
+    "summary": "Саммари",
+    "tasks": "Поручения",
+    "confirm": "Подтвердить протокол",
+    "downloadDocx": "Скачать DOCX",
+    "downloadPdf": "Скачать PDF",
+    "sendToSed": "Отправить в СЭД",
+    "deleteAudio": "Удалить аудио",
+    "reprocess": "Переобработать"
+  },
+  "tasks": {
+    "title": "Дашборд поручений",
+    "mine": "Только мои",
+    "status": {
+      "draft": "Черновик",
+      "confirmed": "Подтверждено",
+      "in_progress": "В работе",
+      "done": "Выполнено",
+      "overdue": "Просрочено"
+    },
+    "urgency": {
+      "low": "Низкая",
+      "normal": "Обычная",
+      "high": "Высокая",
+      "critical": "Критическая"
+    },
+    "dueSoon": "Скоро срок"
+  },
+  "participants": {
+    "title": "Участники",
+    "add": "Добавить участника",
+    "voiceprint": "Голосовой эталон",
+    "recordVoiceprint": "Записать эталон (10 с)",
+    "hasVoiceprint": "Эталон есть"
+  },
+  "common": {
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "delete": "Удалить",
+    "loading": "Загрузка…",
+    "todo": "Страница в разработке"
+  }
+}

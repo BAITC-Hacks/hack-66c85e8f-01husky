@@ -98,9 +98,14 @@ services:
         condition: service_healthy
 
   frontend:
-    image: node:22-alpine
-    working_dir: /app
-    command: ["sh", "-c", "while true; do sleep 3600; done"]
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
 
 volumes:
   postgres-data:
