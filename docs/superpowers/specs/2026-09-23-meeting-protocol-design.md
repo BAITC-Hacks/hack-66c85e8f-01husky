@@ -292,6 +292,7 @@ Celery:
 - Коммиты: Conventional Commits (`feat(backend): ...`, `fix(pipeline): ...`, `spec: ...`).
 - Python: ruff + ruff format, type hints обязательны, pydantic v2. TS: eslint + prettier, strict.
 - Секреты только в `.env` (gitignored). `.env.example` с локальными значениями по умолчанию.
+- CI только локально: `./scripts/check.sh` перед PR, GitHub Actions в репозитории хакатона не включаем.
 - Тесты: backend pytest + httpx; pipeline pytest на fake и на чистые функции; frontend минимум vitest на утилиты.
 - Никаких внешних вызовов из кода по умолчанию. Любой облачный провайдер за флагом.
 

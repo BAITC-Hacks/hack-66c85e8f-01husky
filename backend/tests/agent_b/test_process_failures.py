@@ -26,7 +26,9 @@ def pending_meeting(db, seed, _schema, monkeypatch):
     return meeting.id
 
 
-def test_database_failure_marks_failed_and_preserves_previous_draft(db, pending_meeting, monkeypatch):
+def test_database_failure_marks_failed_and_preserves_previous_draft(
+    db, pending_meeting, monkeypatch
+):
     result = fake_process("synthetic.wav", date(2026, 9, 23), [], ["Другое"])
     # Invalid FK fails the actual commit after persist_result has cleared old rows.
     result.tasks[0].assignee_participant_id = 999999

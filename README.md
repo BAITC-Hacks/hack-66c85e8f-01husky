@@ -272,6 +272,15 @@ curl -s -b c.txt -X POST $API/meetings/bot -H 'Content-Type: application/json' \
 
 ## Тесты
 
+CI на GitHub для репозитория хакатона не используется. Локальная проверка перед каждым PR:
+
+```bash
+./scripts/check.sh             # ruff, pytest backend / pipeline / bots, HTTP smoke
+./scripts/check.sh --compose   # плюс полный docker compose стек, тесты и smoke внутри контейнеров
+```
+
+По отдельности:
+
 ```bash
 cd pipeline && uv run pytest          # контракт и fake-пайплайн
 cd backend && uv run pytest           # API, Celery-задачи, напоминания, экспорт (нужен Postgres protocol_test, ffmpeg, soffice)
