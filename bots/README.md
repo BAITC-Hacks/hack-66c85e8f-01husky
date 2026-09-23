@@ -1,23 +1,60 @@
-# bots
+# Kenes AI: бот-участник
 
-Бот-участник для Google Meet / Zoom / Teams через web-клиенты (Playwright). Владелец: Ардак.
+Гостевые адаптеры Google Meet, Zoom и Microsoft Teams через Playwright. Владелец: агент B / Никита. Организатор допускает `Kenes AI` из комнаты ожидания.
 
-Контракт с бэкендом (`backend/app/tasks/run_bot.py` запускает это subprocess'ом):
+**Статус:** адаптеры, запись, очистка ресурсов и callback реализованы; живой вход Teams подтверждён, запись с callback и вход Meet/Zoom ещё не подтверждены. [Отчёт о доступе и Fireflies](../docs/meeting-bot-access.md).
+
+## Запуск
+
+Штатный путь: `POST /api/v1/meetings/bot` → Celery `run_bot(meeting_id)` в очереди `bots` → отдельный контейнер `bot-worker` → `POST /api/v1/meetings/{id}/audio` → очередь обработки.
+
+```bash
+# Из корня репозитория; .env заполнен, SECRET_KEY заменён случайным значением.
+docker compose up -d --build api worker bot-worker
+```
+
+Образ `backend/Dockerfile:bot-runtime` содержит Chromium, ffmpeg, PulseAudio и Xvfb. Запускается от непривилегированного пользователя; Chromium работает с виртуальным экраном Xvfb (`--headed`), без окна на компьютере пользователя. Один worker обрабатывает одну встречу; его PulseAudio sink изолирован внутри контейнера. Не увеличивать concurrency и не подключать общий аудиосервер между контейнерами.
+
+| Переменная | По умолчанию | Назначение |
+|---|---|---|
+| BOT_TIMEOUT_SEC | 10800 | Общий предел процесса |
+| BOT_LOBBY_TIMEOUT_SEC | 600 | Ожидание допуска |
+| BOT_MAX_RECORDING_SEC | 7200 | Предел записи, с учётом общего бюджета |
+| BOT_UPLOAD_TIMEOUT_SEC | 120 | Таймаут HTTP-загрузки |
+| BOT_AUDIO_DEVICE | pulse:kenes.monitor | Monitor выделенного sink в Compose |
+
+Worker передаёт `KENES_BOT_MEETING_URL` и `KENES_BOT_UPLOAD_TOKEN` через окружение. CLI удаляет их перед запуском дочерних процессов; Chromium/ffmpeg получают ограниченный набор runtime-переменных. Токен ограничен одной встречей и сроком действия. Backend отклоняет общий `BOT_API_TOKEN`, ключи-заглушки, повторный callback и callback для неподходящей стадии.
+
+Для ручной диагностики CLI: `uv run python -m bots.cli --help`. Секретные ссылки и токены не передавать аргументами shell. На macOS запись требует настроенного виртуального аудиоустройства; физический микрофон не записывает выход браузера. Штатный аудиоканал проверяется в Linux-контейнере.
+
+## Ограничения
+
+- Нужны разрешённый гостевой вход, допуск организатора и доступный web-клиент. Обязательный login, CAPTCHA и отказ host завершают попытку с ошибкой.
+- Приглашения проверяются по платформе, HTTPS, hostname и пути. Браузер блокирует приватные сетевые назначения и переходы вне доменов провайдера. Это прикладная проверка, она не гарантирует полную сетевую изоляцию WebRTC и защиту от DNS rebinding.
+- Виртуальная камера показывает светлый логотип Kenes AI из develop, источник 1920×1080 с contentHint=detail. Платформа может снижать разрешение при передаче. Виртуальный микрофон получает WAV из нулевых сэмплов; это исключает тестовый сигнал Chromium даже при изменении кнопки mute. Записывается только выход выделенного PulseAudio sink.
+- Временный профиль и WAV удаляются после успеха либо обработанной ошибки. Жёсткое уничтожение всего контейнера/worker не выполняет Python cleanup; восстановление зависших состояний после такого сбоя пока не реализовано.
+- Логи не содержат приглашения, пароли встречи, callback-токены и DOM. Backend пока показывает общий код ошибки бота; подробная диагностика доступа доступна при ручном запуске CLI.
+- Телемост отложен до приёмки обязательной тройки.
+
+## Проверка
 
 ```bash
 cd bots
-uv sync && uv run playwright install chromium
-uv run python -m bots.cli --platform meet --url https://meet.google.com/abc-defg-hij \
-  --meeting-id 12 --api-url http://localhost:8000/api/v1 --api-token "$BOT_API_TOKEN"
+uv sync --locked
+uv run playwright install chromium
+uv run pytest
+uv run ruff check .
+# При установленном Google Chrome для HTML fixtures:
+KENES_TEST_BROWSER_CHANNEL=chrome uv run pytest
 ```
 
-По окончании звонка бот делает `POST {api-url}/meetings/{id}/audio` с заголовком `X-Bot-Token`,
-бэкенд ставит запись в обработку. Код выхода 0 = загружено, иначе бэкенд помечает совещание `failed`.
+HTML fixtures запускаются в настоящем браузере, но используют локальные страницы. Если Chromium не установлен и канал Chrome не указан, браузерные тесты пропускаются. Для приёмки нужны фактические звонки из [отчёта](../docs/meeting-bot-access.md).
 
-Что реализовать: `join / wait_admitted / call_ended / leave` в `meet.py`, `zoom.py`, `teams.py`
-(селекторы web-клиентов). Запись и загрузка уже в `base.py`. Захват звука: PulseAudio null sink +
-`ffmpeg -f pulse` в docker, BlackHole на macOS (`--audio-device avfoundation::BlackHole 2ch`).
+Аудиопроверка без внешних встреч после сборки образа:
 
 ```bash
-uv run pytest
+docker compose run --rm --no-deps bot-worker \
+  uv run --no-sync python /app/bots/scripts/audio_smoke.py
 ```
+
+Она должна записать тон из Chromium через PulseAudio в WAV 16 kHz mono, проверить слышимость и удалить временные файлы. Ошибка либо отсутствие runtime не считаются успешной проверкой. Контейнерный прогон пока не подтверждён.

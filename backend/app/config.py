@@ -1,6 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
@@ -35,10 +36,13 @@ class Settings(BaseSettings):
 
     due_soon_hours: int = 24
 
-    # Meeting bot (bots/ package) calls back into the API with this token.
-    bot_api_token: str = "change-me-bot-token"
+    # Bot callback credentials are scoped JWTs, minted per meeting by the worker.
     public_api_url: str = "http://localhost:8000/api/v1"
-    bot_timeout_sec: int = 3 * 3600
+    bot_timeout_sec: int = Field(default=3 * 3600, ge=60)
+    bot_lobby_timeout_sec: int = Field(default=600, ge=1)
+    bot_upload_timeout_sec: int = Field(default=120, ge=1)
+    bot_max_recording_sec: int = Field(default=2 * 3600, ge=1)
+    bot_audio_device: str = "pulse:kenes.monitor"
     cors_origins: list[str] = ["http://localhost:3000"]
 
     @property

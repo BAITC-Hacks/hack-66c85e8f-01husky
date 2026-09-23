@@ -33,7 +33,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "httpx", specifier = ">=0.27" },
-    { name = "playwright", specifier = ">=1.47" },
+    { name = "playwright", specifier = ">=1.48" },
 ]
 
 [package.metadata.requires-dev]

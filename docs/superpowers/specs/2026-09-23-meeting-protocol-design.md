@@ -1,4 +1,6 @@
-# Система автопротоколирования совещаний с фиксацией поручений: design spec
+# Kenes AI: система автопротоколирования совещаний
+
+Рабочее название проекта: **Kenes AI**.
 
 Дата: 2026-09-23. Статус: approved, ready for implementation.
 Репозиторий: https://github.com/BAITC-Hacks/hack-66c85e8f-01husky
@@ -38,7 +40,7 @@
 | backend/ | Python 3.12, FastAPI, SQLAlchemy 2 + Alembic, PostgreSQL 16, Celery 5 + Redis, uv |
 | pipeline/ | Python 3.12 библиотека, pydantic v2, faster-whisper, pyannote.audio 3.1, speechbrain (ECAPA), httpx; uv |
 | bots/ | Python 3.12, Playwright (Chromium), ffmpeg; uv |
-| infra | docker-compose: `frontend`, `api`, `worker`, `beat`, `postgres`, `redis`, `ollama` |
+| infra | docker-compose: `frontend`, `api`, `worker`, `bot-worker`, `beat`, `postgres`, `redis`, `ollama` |
 | экспорт | python-docx → DOCX; PDF через LibreOffice headless (`soffice --convert-to pdf`) |
 
 ## 4. Структура репозитория
@@ -77,7 +79,7 @@ bots/
   bots/
     base.py          MeetingBot: join(url) → record → leave → upload
     meet.py, zoom.py, teams.py   адаптеры селекторов
-    cli.py           python -m bots.cli --platform meet --url ... --meeting-id ...
+    cli.py           python -m bots.cli --platform meet --meeting-id ... (URL/token через env)
 docs/superpowers/specs/   этот файл
 docker-compose.yml
 .env.example
@@ -258,7 +260,7 @@ OpenAPI: `http://localhost:8000/docs`. Фронт генерирует типы 
 Celery:
 - `process_meeting(meeting_id)`: status→processing, `pipeline.process(...)` с progress-колбэком в `meetings.progress_*`, запись segments/speaker_map/tasks/summary, status→draft; при исключении status→failed + error.
 - `check_deadlines()` (beat, каждый час): `due_soon` за 24 ч до срока (одно уведомление на задачу), `overdue` при просрочке + смена статуса.
-- `run_bot(meeting_id, platform, url)`: subprocess `python -m bots.cli ...`.
+- `run_bot(meeting_id)`: выделенная очередь `bots`, subprocess `python -m bots.cli ...`. Worker читает platform/url из БД; URL и временный upload token передаёт через env. Callback проверяет audience, meeting_id, срок токена, source=bot и стадию ожидания аудио. Повторная загрузка отклоняется.
 
 ## 8. Frontend: экраны
 
@@ -296,9 +298,11 @@ Celery:
 Вход: раздел 5. Первое действие: прогнать реальную тестовую запись через `python -m pipeline.cli`, сравнить `language=None` vs `language=ru` для шала-казахского, зафиксировать выбор в `pipeline/README.md`.
 Порядок: локальные PostgreSQL/Redis → stt local + privacy → API/Celery/MeetingResult → diarize → локальный extract → summary → voiceprint + enroll. Никаких облачных провайдеров. Готово, когда реальная запись даёт проверяемые спикеры, поручения, даты и саммари, результат сохраняется и экспортируется backend.
 
-### Другой участник: `bots/`
-Бот: Playwright Chromium с фейковым аудио-устройством, заходит по ссылке как «Протокол-бот», ждёт допуска, пишет аудио вкладки через `--use-fake-ui-for-media-stream` + ffmpeg/pulse (Linux в docker) или screen-capture API, по окончании `POST /meetings/{id}/audio`.
-Готово, когда: бот записывает 1 минуту Meet и загружает файл в backend. Zoom/Teams проверяются отдельно. Ардак согласует API приёма, но не реализует бота.
+### Агент B / Никита: `bots/` и bot runtime
+
+По решению Никиты обязательны Meet, Zoom и Teams; Телемост опционален. Гость с видимым именем Kenes AI, организатор допускает из lobby. По запросу Никиты виртуальная камера показывает статичный логотип из develop, микрофон получает только нулевые аудиосэмплы. Отдельный bot-worker с concurrency=1 и PulseAudio sink. Backend выдаёт временный токен только на загрузку записи этой встречи.
+
+Готово, когда для каждой из трёх платформ бот принят во встречу, записал минимум минуту слышимой тестовой речи, вышел, загрузил WAV и meeting дошёл до draft. Локальные HTML fixtures не заменяют эту приёмку.
 
 ### Camille (агент): каркас
 Скаффолд репо: структура папок, `pipeline/models.py` с контрактом, `pipeline/fake.py`, `backend` с моделями и Alembic-миграцией 0001, пустые роутеры со схемами, `docker-compose.yml`, `.env.example`, README-заготовка. После скаффолда: интеграция стыков, README, ревью.
@@ -324,5 +328,5 @@ Celery:
 |---|---|
 | Whisper плохо берёт шала-казахский | Проверить на реальной записи в первый час; форс `ru` + LLM-постправка; казахский fine-tune whisper с HF как запасной |
 | pyannote медленный на CPU | Демо-запись 3-5 минут; замер на целевом железе, при необходимости локальный GPU; реальное время указать в README |
-| Бот Meet не пускают / не пишет звук | Meet первым, остальные адаптерами; если не взлетает, остаётся файл + live, бот в README как roadmap с кодом |
+| Бот не входит / не пишет звук | Проверить гостевой доступ и допуск, затем аудиоканал. Meet, Zoom и Teams остаются обязательными; непроверенные платформы отмечаются явно. SDK или учётная сессия требуют отдельной интеграции |
 | LLM выдумывает поручения | Шаг Verify по дословной цитате в коде, confidence в UI, черновик подтверждает секретарь |
