@@ -109,3 +109,33 @@ def test_mock_sed_concurrent_sequence(tmp_path):
         references = list(pool.map(push, [1, 2, 3, 4, 1]))
     assert len(set(references)) == 4
     assert references[0] == references[-1]
+
+
+def test_failed_pdf_conversion_cleans_export_directory(admin_client, meeting, monkeypatch):
+    def fail_conversion(path):
+        raise RuntimeError("soffice failed")
+
+    monkeypatch.setattr("app.routers.exports.to_pdf", fail_conversion)
+    response = admin_client.get(f"/api/v1/meetings/{meeting.id}/export?format=pdf")
+    assert response.status_code == 503
+    assert list((get_settings().data_dir / "exports").iterdir()) == []
+
+
+def test_failed_sed_delivery_cleans_export_and_preserves_db(admin_client, meeting, monkeypatch, db):
+    def convert(path):
+        pdf = path.with_suffix(".pdf")
+        pdf.write_bytes(b"%PDF-1.4\nfixture")
+        return pdf
+
+    def fail_delivery(*args):
+        raise OSError("outbox unavailable")
+
+    monkeypatch.setattr("app.routers.exports.to_pdf", convert)
+    monkeypatch.setattr("app.routers.exports.MockSED.push_protocol", fail_delivery)
+    with pytest.raises(OSError, match="outbox unavailable"):
+        admin_client.post(f"/api/v1/meetings/{meeting.id}/sed")
+    db.rollback()
+    db.refresh(meeting)
+    assert meeting.sed_ref is None
+    assert all(task.sed_ref is None for task in meeting.tasks)
+    assert list((get_settings().data_dir / "exports").iterdir()) == []

@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=(".env", "../.env"), extra="ignore")
 
     app_name: str = "Meeting Protocol API"
+    organization_name: str = ""
     debug: bool = False
     secret_key: str = "change-me-in-env"
     access_token_days: int = 7

@@ -75,3 +75,50 @@ def test_to_pdf_does_not_accept_stale_output(tmp_path, monkeypatch):
     monkeypatch.setattr("app.services.export.subprocess.run", lambda *args, **kwargs: None)
     with pytest.raises(RuntimeError, match="without creating"):
         to_pdf(docx_path)
+
+
+def test_export_header_roles_unknown_speaker_and_control_characters(detail, tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        "app.services.export.get_settings",
+        lambda: SimpleNamespace(data_dir=tmp_path, organization_name="Тестовая организация"),
+    )
+    detail["meeting"]["title"] = "Тест\x00Қазақ"
+    detail["participants"][0].role = "Председатель"
+    detail["segments"] = [{"speaker": "UNKNOWN", "start": 65, "text": "Әліпби\x0b Сөз"}]
+    doc = Document(build_docx(detail, "kk"))
+    text = "\n".join(p.text for p in doc.paragraphs)
+    assert "Тестовая организация" in text and "ТестҚазақ" in text
+    assert "Серик (Председатель)" in text
+    assert "[01:05] UNKNOWN: Әліпби Сөз" in text
+
+
+def test_export_empty_detail_is_readable(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        "app.services.export.get_settings", lambda: SimpleNamespace(data_dir=tmp_path)
+    )
+    doc = Document(build_docx({"id": 7, "title": "Без поручений"}, "ru"))
+    assert len(doc.tables[0].rows) == 1
+    assert any("Участники: —" == p.text for p in doc.paragraphs)
+
+
+def test_failed_docx_save_cleans_working_directory(detail, tmp_path, monkeypatch):
+    def fail_save(*args, **kwargs):
+        raise OSError("disk unavailable")
+
+    monkeypatch.setattr("docx.document.Document.save", fail_save)
+    with pytest.raises(OSError, match="disk unavailable"):
+        build_docx(detail, "ru")
+    assert list((tmp_path / "exports").iterdir()) == []
+
+
+def test_pdf_converter_rejects_invalid_output(tmp_path, monkeypatch):
+    source = tmp_path / "protocol.docx"
+    Document().save(source)
+    monkeypatch.setattr("app.services.export.shutil.which", lambda _: "/bin/soffice")
+
+    def corrupt_output(*args, **kwargs):
+        source.with_suffix(".pdf").write_text("conversion error")
+
+    monkeypatch.setattr("app.services.export.subprocess.run", corrupt_output)
+    with pytest.raises(RuntimeError, match="not a PDF"):
+        to_pdf(source)
