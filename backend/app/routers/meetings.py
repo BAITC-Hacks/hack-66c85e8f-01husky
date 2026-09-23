@@ -1,14 +1,38 @@
 from datetime import UTC, date, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Cookie,
+    Depends,
+    File,
+    Form,
+    Header,
+    HTTPException,
+    Query,
+    UploadFile,
+    WebSocket,
+    WebSocketDisconnect,
+    status,
+)
 from sqlalchemy import select
 
-from app.deps import DbDep, current_user
+from app.config import get_settings
+from app.db import SessionLocal
+from app.deps import COOKIE_NAME, DbDep, current_user
 from app.models import Meeting, Participant, Task, User
 from app.models.enums import Locale, MeetingSource, MeetingStatus, NotificationKind, TaskStatus
-from app.schemas.meeting import MeetingDetail, MeetingOut, MeetingPatch, SpeakerMapIn, TaskOut
+from app.schemas.meeting import (
+    BotMeetingIn,
+    LiveMeetingIn,
+    MeetingDetail,
+    MeetingOut,
+    MeetingPatch,
+    SpeakerMapIn,
+    TaskOut,
+)
 from app.schemas.participant import ParticipantOut
+from app.security import decode_access_token
 from app.services import audio as audio_svc
 from app.services import notify
 from app.services.access import get_meeting_or_404, require_editor, visible_meetings
@@ -102,6 +126,141 @@ def create_meeting(
     enqueue_processing(m.id)
     db.refresh(m)
     return meeting_out(m)
+
+
+def _new_meeting(db, user: User, body: LiveMeetingIn, source: MeetingSource, **extra) -> Meeting:
+    m = Meeting(
+        title=body.title,
+        meeting_date=body.meeting_date,
+        source=source,
+        output_language=body.output_language,
+        status=MeetingStatus.uploaded,
+        created_by=user.id,
+        **extra,
+    )
+    m.participants = _load_participants(db, body.participant_ids)
+    db.add(m)
+    db.commit()
+    db.refresh(m)
+    return m
+
+
+@router.post("/live", response_model=MeetingOut, status_code=status.HTTP_201_CREATED)
+def create_live_meeting(body: LiveMeetingIn, db: DbDep, user: UserDep) -> MeetingOut:
+    """Create a meeting to be fed by the browser over WS /meetings/{id}/live."""
+    return meeting_out(_new_meeting(db, user, body, MeetingSource.live))
+
+
+@router.post("/bot", response_model=MeetingOut, status_code=status.HTTP_201_CREATED)
+def create_bot_meeting(body: BotMeetingIn, db: DbDep, user: UserDep) -> MeetingOut:
+    """Create a meeting and dispatch the bot to join the call."""
+    from app.tasks.run_bot import run_bot
+
+    m = _new_meeting(db, user, body, MeetingSource.bot, platform=body.platform, bot_url=body.url)
+    m.status, m.progress_stage = MeetingStatus.processing, "bot_joining"
+    db.commit()
+    run_bot.delay(m.id, body.platform, body.url)
+    db.refresh(m)
+    return meeting_out(m)
+
+
+def _attach_audio_and_process(db, m: Meeting, src) -> None:
+    wav = audio_svc.to_wav(src)
+    m.audio_path = str(wav)
+    m.duration_sec = audio_svc.probe_duration(wav)
+    m.status = MeetingStatus.uploaded
+    db.commit()
+    enqueue_processing(m.id)
+
+
+@router.post("/{meeting_id}/audio", response_model=MeetingOut)
+def upload_meeting_audio(
+    meeting_id: int,
+    db: DbDep,
+    file: Annotated[UploadFile, File()],
+    x_bot_token: Annotated[str | None, Header()] = None,
+    access_token: Annotated[str | None, Cookie()] = None,
+) -> MeetingOut:
+    """Attach a recording to an existing meeting (bot callback or manual re-upload).
+
+    Auth: either the bot token header or a logged-in editor.
+    """
+    m = db.get(Meeting, meeting_id)
+    if not m:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Meeting not found")
+    if x_bot_token != get_settings().bot_api_token:
+        uid = decode_access_token(access_token) if access_token else None
+        user = db.get(User, uid) if uid else None
+        if not user:
+            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Not authenticated")
+        require_editor(m, user)
+    if m.status == MeetingStatus.confirmed:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Confirmed protocol cannot be replaced")
+    try:
+        src = audio_svc.save_upload(m.id, file)
+        _attach_audio_and_process(db, m, src)
+    except ValueError as e:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(e)) from e
+    except Exception as e:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY, f"Cannot decode audio: {e}"
+        ) from e
+    db.refresh(m)
+    return meeting_out(m)
+
+
+@router.websocket("/{meeting_id}/live")
+async def live_audio(ws: WebSocket, meeting_id: int) -> None:
+    """Receive binary audio chunks (webm/opus from MediaRecorder); text {"event":"stop"} finalizes.
+
+    Chunks are appended to data/audio/<id>/source.webm; on stop the file is normalized and
+    processing is enqueued. Auth via the access_token cookie.
+    """
+    uid = decode_access_token(ws.cookies.get(COOKIE_NAME, "") or "")
+    with SessionLocal() as db:
+        user = db.get(User, uid) if uid else None
+        m = db.get(Meeting, meeting_id)
+        if not user or not m or (user.role != "admin" and m.created_by != user.id):
+            await ws.close(code=4401)
+            return
+        if m.source != MeetingSource.live or m.status == MeetingStatus.confirmed:
+            await ws.close(code=4409)
+            return
+        m.status, m.progress_stage = MeetingStatus.processing, "recording"
+        db.commit()
+    await ws.accept()
+    dest = audio_svc.meeting_dir(meeting_id) / "source.webm"
+    received = 0
+    stopped = False
+    try:
+        with dest.open("ab") as f:
+            while True:
+                msg = await ws.receive()
+                if msg.get("type") == "websocket.disconnect":
+                    break
+                if msg.get("bytes"):
+                    f.write(msg["bytes"])
+                    received += len(msg["bytes"])
+                elif msg.get("text"):
+                    if '"stop"' in msg["text"]:
+                        stopped = True
+                        break
+    except WebSocketDisconnect:
+        pass
+    with SessionLocal() as db:
+        m = db.get(Meeting, meeting_id)
+        if received == 0:
+            m.status, m.progress_stage = MeetingStatus.uploaded, None
+            db.commit()
+        else:
+            try:
+                _attach_audio_and_process(db, m, dest)
+            except Exception as e:  # noqa: BLE001
+                m.status, m.error = MeetingStatus.failed, f"Cannot decode live audio: {e}"[:2000]
+                db.commit()
+    if stopped:
+        await ws.send_json({"event": "stopped", "bytes": received})
+        await ws.close()
 
 
 @router.get("", response_model=list[MeetingOut])

@@ -8,7 +8,7 @@ celery_app = Celery(
     "protocol",
     broker=settings.redis_url,
     backend=settings.redis_url,
-    include=["app.tasks.process_meeting", "app.tasks.reminders"],
+    include=["app.tasks.process_meeting", "app.tasks.reminders", "app.tasks.run_bot"],
 )
 celery_app.conf.update(
     task_serializer="json",

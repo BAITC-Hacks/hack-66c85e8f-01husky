@@ -31,6 +31,11 @@ class Settings(BaseSettings):
     openai_api_key: str | None = None
 
     due_soon_hours: int = 24
+
+    # Meeting bot (bots/ package) calls back into the API with this token.
+    bot_api_token: str = "change-me-bot-token"
+    public_api_url: str = "http://localhost:8000/api/v1"
+    bot_timeout_sec: int = 3 * 3600
     cors_origins: list[str] = ["http://localhost:3000"]
 
     @property
