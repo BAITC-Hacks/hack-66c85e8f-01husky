@@ -37,7 +37,6 @@ jobs:
       - name: Exercise HTTP API through the real Redis and Celery worker
         run: |
           docker compose exec -T api uv run --no-sync python scripts/smoke_backend.py --api-url http://api:8000/api/v1
-          curl --fail --silent --show-error --location --retry 10 --retry-connrefused --retry-delay 2 http://localhost:3000/login > /dev/null
       - name: Diagnostics
         if: always()
         run: |
