@@ -11,8 +11,16 @@ def test_admin_page_has_only_local_assets(client):
     assert response.headers["cache-control"] == "no-store"
     assert "/admin-assets/app.js" in response.text
     assert "admin123" not in response.text
+    assert "<title>Kenes AI · База данных</title>" in response.text
+    assert 'alt="Kenes AI"' in response.text
+    assert "Автопротокол" not in response.text
     assert client.get("/admin-assets/app.js").status_code == 200
     assert client.get("/admin-assets/style.css").status_code == 200
+    assert client.get("/admin-assets/brand.css").status_code == 200
+    logo = client.get("/admin-assets/kenes-ai-light.svg")
+    assert logo.status_code == 200
+    assert logo.headers["content-type"].startswith("image/svg+xml")
+    assert "Kenes AI" in logo.text
 
 
 @pytest.mark.parametrize("path", ["/tables", "/tables/users", "/tables/segments"])

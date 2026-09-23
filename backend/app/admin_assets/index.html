@@ -3,15 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Автопротокол · База данных</title>
+  <title>Kenes AI · База данных</title>
   <link rel="stylesheet" href="/admin-assets/style.css">
+  <link rel="stylesheet" href="/admin-assets/brand.css">
   <script src="/admin-assets/app.js" defer></script>
 </head>
 <body>
   <section id="login" class="login-shell">
     <form id="login-form" class="login-card">
-      <span class="brand-icon">А</span><p class="eyebrow">АВТОПРОТОКОЛ / LOCAL</p>
-      <h1>Ваша база данных.<br>Всё на одном экране.</h1>
+      <img class="login-logo" src="/admin-assets/kenes-ai-light.svg" alt="Kenes AI" width="190" height="51">
+      <p class="eyebrow">БАЗА ДАННЫХ / LOCAL</p>
+      <h1>Kenes AI</h1>
       <p class="muted">Войдите как администратор, чтобы посмотреть встречи, транскрипты и поручения.</p>
       <label>Email<input id="email" type="email" autocomplete="username" required placeholder="admin@example.com"></label>
       <label>Пароль<input id="password" type="password" autocomplete="current-password" required></label>
@@ -22,14 +24,14 @@
   </section>
   <div id="workspace" class="workspace" hidden>
     <aside>
-      <div class="brand"><span class="brand-icon">А</span><div>Автопротокол<small>DATABASE EXPLORER</small></div></div>
+      <div class="brand"><img class="brand-logo" src="/admin-assets/kenes-ai-light.svg" alt="Kenes AI" width="180" height="48"><small>DATABASE EXPLORER</small></div>
       <div class="connection"><span class="dot"></span> PostgreSQL <span class="local">LOCAL</span></div>
       <p class="nav-label">ТАБЛИЦЫ ПРИЛОЖЕНИЯ</p>
       <nav id="tables" aria-label="Таблицы базы данных"></nav>
       <div class="sidebar-bottom"><p>Данные остаются<br>на этом компьютере.</p><a href="/docs" target="_blank" rel="noopener">Документация API ↗</a></div>
     </aside>
     <main>
-      <header><span>Рабочее пространство <span class="slash">/</span> База данных</span><div><span id="account"></span><button id="logout" type="button">Выйти</button></div></header>
+      <header><span>Kenes AI <span class="slash">/</span> База данных</span><div><span id="account"></span><button id="logout" type="button">Выйти</button></div></header>
       <section class="content">
         <div class="heading"><div><p class="eyebrow">ОБЗОР ДАННЫХ</p><h1 id="title">Совещания</h1><p id="subtitle" class="muted"></p></div><span class="readonly">◉ Только чтение</span></div>
         <div id="stats" class="stats"></div>

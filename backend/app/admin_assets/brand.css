@@ -1,0 +1,33 @@
+/* The light wordmark includes dark lettering: keep its original colors on white. */
+.brand {
+  display: block;
+  padding: 12px;
+  background: #fff;
+  border-radius: 12px;
+}
+
+.brand-logo {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.brand small {
+  margin-top: 8px;
+  color: #706c8a;
+  text-align: center;
+}
+
+.login-logo {
+  display: block;
+  width: 190px;
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 600px) {
+  .brand {
+    width: 184px;
+  }
+}
