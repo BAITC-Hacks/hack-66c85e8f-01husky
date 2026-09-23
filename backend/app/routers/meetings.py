@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import UTC, date, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
@@ -6,12 +6,14 @@ from sqlalchemy import select
 
 from app.deps import DbDep, current_user
 from app.models import Meeting, Participant, Task, User
-from app.models.enums import Locale, MeetingSource, MeetingStatus
-from app.schemas.meeting import MeetingDetail, MeetingOut, MeetingPatch, TaskOut
+from app.models.enums import Locale, MeetingSource, MeetingStatus, NotificationKind, TaskStatus
+from app.schemas.meeting import MeetingDetail, MeetingOut, MeetingPatch, SpeakerMapIn, TaskOut
 from app.schemas.participant import ParticipantOut
 from app.services import audio as audio_svc
+from app.services import notify
 from app.services.access import get_meeting_or_404, require_editor, visible_meetings
 from app.services.processing import enqueue_processing
+from app.services.speakers import apply_speaker_map
 
 router = APIRouter(prefix="/meetings", tags=["meetings"])
 
@@ -138,6 +140,51 @@ def patch_meeting(meeting_id: int, body: MeetingPatch, db: DbDep, user: UserDep)
         setattr(m, k, v)
     if ids is not None:
         m.participants = _load_participants(db, ids)
+    db.commit()
+    db.refresh(m)
+    return meeting_detail(m)
+
+
+@router.put("/{meeting_id}/speakers", response_model=MeetingDetail)
+def set_speakers(
+    meeting_id: int, body: list[SpeakerMapIn], db: DbDep, user: UserDep
+) -> MeetingDetail:
+    m = get_meeting_or_404(db, user, meeting_id)
+    require_editor(m, user)
+    ids = [x.participant_id for x in body if x.participant_id is not None]
+    _load_participants(db, ids)
+    apply_speaker_map(db, m, {x.speaker: x.participant_id for x in body})
+    db.commit()
+    db.refresh(m)
+    return meeting_detail(m)
+
+
+@router.post("/{meeting_id}/confirm", response_model=MeetingDetail)
+def confirm_meeting(meeting_id: int, db: DbDep, user: UserDep) -> MeetingDetail:
+    m = get_meeting_or_404(db, user, meeting_id)
+    require_editor(m, user)
+    if m.status != MeetingStatus.draft:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, f"Cannot confirm meeting in status {m.status.value}"
+        )
+    m.status = MeetingStatus.confirmed
+    m.confirmed_at = datetime.now(UTC)
+    notified: set[int] = set()
+    for t in m.tasks:
+        if t.status == TaskStatus.draft:
+            t.status = TaskStatus.confirmed
+        deadline = f", срок {t.deadline.isoformat()}" if t.deadline else ""
+        n = notify.notify_task(db, t, NotificationKind.assigned, f"«{m.title}»: {t.text}{deadline}")
+        if n:
+            notified.add(n.user_id)
+    for uid in notified:
+        notify.create(
+            db,
+            uid,
+            NotificationKind.protocol_ready,
+            f"Протокол совещания «{m.title}» от {m.meeting_date.isoformat()} подтверждён",
+            meeting_id=m.id,
+        )
     db.commit()
     db.refresh(m)
     return meeting_detail(m)
