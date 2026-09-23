@@ -196,6 +196,12 @@ def upload_meeting_audio(
         require_editor(m, user)
     if m.status == MeetingStatus.confirmed:
         raise HTTPException(status.HTTP_409_CONFLICT, "Confirmed protocol cannot be replaced")
+    if m.status == MeetingStatus.processing and m.progress_stage not in (
+        None,
+        "bot_joining",
+        "recording",
+    ):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Meeting is already being processed")
     try:
         src = audio_svc.save_upload(m.id, file)
         _attach_audio_and_process(db, m, src)
@@ -357,6 +363,8 @@ def reprocess_meeting(meeting_id: int, db: DbDep, user: UserDep) -> MeetingOut:
         raise HTTPException(status.HTTP_409_CONFLICT, "Audio was deleted, cannot reprocess")
     if m.status == MeetingStatus.confirmed:
         raise HTTPException(status.HTTP_409_CONFLICT, "Confirmed protocol cannot be reprocessed")
+    if m.status == MeetingStatus.processing:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Meeting is already being processed")
     m.status = MeetingStatus.uploaded
     m.error = None
     db.commit()
