@@ -3,7 +3,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from pipeline import process
+from pipeline import process, real
+from pipeline.diarization import SpeakerTurn
 from pipeline.privacy import mask_sensitive
 from pipeline.settings import PipelineSettings
 from pipeline.stt import local_whisper
@@ -32,12 +33,15 @@ def test_real_pipeline_masks_before_result_and_does_not_invent_tasks(tmp_path, m
             ), SimpleNamespace(duration=2, language="ru", language_probability=0.9)
 
     monkeypatch.setattr(local_whisper, "_load_model", lambda *args: Model())
+    monkeypatch.setattr(real, "diarize", lambda *args, **kwargs: [SpeakerTurn(0, 1, 7)])
     stages = []
     result = process(str(audio), date(2026, 9, 23), [], [], progress=lambda s, p: stages.append(p))
     assert result.segments[0].text == "ИИН [IIN], [PHONE]"
-    assert result.segments[0].speaker == "SPEAKER_UNKNOWN"
+    assert result.segments[0].speaker == "speaker1"
     assert result.segments[0].lang == "other"
-    assert result.tasks == result.speaker_map == []
+    assert result.tasks == []
+    assert result.speaker_map[0].participant_id is None
+    assert result.speaker_map[0].source == "none"
     assert result.summary == ""
     assert result.model_info["extract"] == "unavailable"
     assert stages == sorted(stages) and stages[-1] == 1
