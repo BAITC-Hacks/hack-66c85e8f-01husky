@@ -4,6 +4,7 @@ import { AudioWaveform, ChevronRight, Search, UserPlus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { EmptyState, PageHeader, ParticipantAvatar } from "@/components/common/bits";
+import { QueryError } from "@/components/common/error-screen";
 import { GuestDialog } from "@/components/participants/guest-dialog";
 import { VoiceprintSheet } from "@/components/participants/voiceprint-sheet";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,7 @@ import { cn } from "@/lib/utils";
 export default function ParticipantsPage() {
   const t = useTranslations("participants");
   const tc = useTranslations("common");
-  const { data = [], isLoading } = useParticipants();
+  const { data = [], isLoading, error, refetch } = useParticipants();
   const [q, setQ] = useState("");
   const [openId, setOpenId] = useState<number | null>(null);
   const selected = data.find((p) => p.id === openId) ?? null;
@@ -60,6 +61,8 @@ export default function ParticipantsPage() {
 
       {isLoading ? (
         <Skeleton className="h-72 rounded-lg" />
+      ) : error ? (
+        <QueryError error={error} onRetry={() => refetch()} />
       ) : list.length === 0 ? (
         <EmptyState title={t("empty")} />
       ) : (

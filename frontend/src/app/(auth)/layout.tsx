@@ -16,7 +16,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
       {/* Left: indigo hero, only on large screens */}
       <aside className="bg-hero relative hidden overflow-hidden text-white lg:flex lg:flex-col">
         <div className="relative flex flex-1 flex-col justify-between p-12 xl:p-16">
-          <Wordmark className="[&>span]:text-white" />
+          <Wordmark tone="dark" />
           <div className="max-w-xl">
             <h1 className="font-heading text-4xl leading-[1.1] font-bold text-balance xl:text-5xl">
               <span className="text-gradient">{t("heroTitle")}</span>

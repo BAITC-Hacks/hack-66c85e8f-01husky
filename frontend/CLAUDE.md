@@ -1,4 +1,4 @@
-# frontend/ — Хаттама web app
+# frontend/ — Kenes AI web app
 
 Owner: Emir. This folder only. Backend (`backend/`), pipeline and bots belong to other people; do not edit them.
 
@@ -17,7 +17,7 @@ pnpm test       # vitest (src/**/*.test.ts)
 pnpm gen:api    # openapi-typescript from ${BACKEND_URL}/openapi.json → src/lib/api/schema.gen.ts
 ```
 
-Mock data persists in localStorage. Open any page with `?reset-mocks` to start over. Demo login: `admin@hattama.kz`, any password.
+Mock data persists in localStorage. Open any page with `?reset-mocks` to start over. Demo login: `admin@kenes.ai`, any password.
 
 ## Stack
 
@@ -50,6 +50,7 @@ src/components/{common,meeting,meetings,new-meeting,participants,tasks,notificat
 - **New endpoint:** add the type to `types.ts`, a hook to `queries/`, and a handler + fixture to `mocks/`. `pnpm mock` must keep working.
 - **Mocks without a Service Worker:** `transport()` resolves requests against the MSW `handlers` with `getResponse`. That works in embedded browsers and on plain-HTTP LAN demos where SWs fail. The mock branch is tree-shaken when `NEXT_PUBLIC_API_MOCKING` is not `1`.
 - **Polling (spec §8):** a meeting refetches every 3 s while `uploaded|processing`. The bell refetches every 30 s.
+- **Errors:** never `toast.error(e.message)`. Failed mutations are toasted globally (MutationCache in `providers.tsx`, localized by `errorKind()` in `lib/api/errors.ts`); opt out with `meta: { silent: true }` when the UI shows the error itself. For anything else use `useNotify()` (`hooks/use-notify.ts`). A query that fails on first load renders `<QueryError>`; route crashes and 404s use `ErrorScreen` via `error.tsx` / `not-found.tsx` / `global-error.tsx`.
 - **Files:** exports download through `lib/api/download.ts` (fetch → blob), not `<a href>`, so cookies and mocks both work.
 - **Live recording:** `openLiveSocket()` goes straight to `NEXT_PUBLIC_WS_URL`, because Next rewrites don't proxy WebSockets. Binary chunks go every 1 s, then `{"event":"stop"}`.
 - **Privacy (spec §2):** no external runtime requests. Fonts come through `next/font` (self-hosted at build). No analytics, no CDNs.

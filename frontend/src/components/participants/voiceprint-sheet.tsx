@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ParticipantAvatar } from "@/components/common/bits";
 import { LevelMeter } from "@/components/common/level-meter";
 import { Button } from "@/components/ui/button";
+import { useNotify } from "@/hooks/use-notify";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useDeleteVoiceprint, useEnrollVoiceprint } from "@/lib/api/queries/participants";
 import type { Participant } from "@/lib/api/types";
@@ -24,6 +25,8 @@ export function VoiceprintSheet({
   onOpenChange: (o: boolean) => void;
 }) {
   const t = useTranslations("participants");
+  const te = useTranslations("errors");
+  const notify = useNotify();
   const rec = useRecorder({ timeslice: 250 });
   const enroll = useEnrollVoiceprint();
   const remove = useDeleteVoiceprint();
@@ -41,7 +44,6 @@ export function VoiceprintSheet({
         { id: participant.id, audio: blob },
         {
           onSuccess: () => toast.success(t("enrolled")),
-          onError: (e) => toast.error(e.message),
           onSettled: () => {
             stopping.current = false;
             rec.reset();
@@ -133,13 +135,17 @@ export function VoiceprintSheet({
             </div>
             <LevelMeter levels={rec.levels.slice(-32)} active={recording} className="mt-4 h-10 w-56" />
             {enroll.isPending && <p className="text-muted-foreground mt-2 text-sm">{t("enrolling")}</p>}
+            {rec.error && <p className="text-coral mt-2 text-sm">{te(`mic.${rec.error}`)}</p>}
           </div>
 
           <Button
             size="lg"
             className={cn("h-11", !recording && "bg-rec hover:bg-rec/90 text-white")}
             disabled={recording || enroll.isPending}
-            onClick={() => rec.start()}
+            onClick={async () => {
+              const micErr = await rec.start();
+              if (micErr) notify.warn(te(`mic.${micErr}`), te(`mic.${micErr}Hint`));
+            }}
           >
             <Mic />
             {participant.has_voiceprint ? t("rerecord") : t("record")}

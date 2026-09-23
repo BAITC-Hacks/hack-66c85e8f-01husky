@@ -37,7 +37,7 @@ export const MODEL_INFO = {
 export const seedUsers: (User & { password: string })[] = [
   {
     id: 1,
-    email: "admin@hattama.kz",
+    email: "admin@kenes.ai",
     password: "admin",
     name: "Айгерим Жумабаева",
     role: "admin",
@@ -47,12 +47,12 @@ export const seedUsers: (User & { password: string })[] = [
 ];
 
 export const seedParticipants: Participant[] = [
-  { id: 1, name: "Айбек Нуров", email: "a.nurov@hattama.kz", position: "Директор по ИТ", user_id: null, has_voiceprint: true, created_at: ts(-50) },
-  { id: 2, name: "Динара Касымова", email: "d.kassymova@hattama.kz", position: "Главный бухгалтер", user_id: null, has_voiceprint: false, created_at: ts(-50) },
-  { id: 3, name: "Ержан Абенов", email: "e.abenov@hattama.kz", position: "Юрист", user_id: null, has_voiceprint: true, created_at: ts(-50) },
-  { id: 4, name: "Мария Ким", email: "m.kim@hattama.kz", position: "HR-менеджер", user_id: null, has_voiceprint: false, created_at: ts(-45) },
-  { id: 5, name: "Тимур Ахметов", email: "t.akhmetov@hattama.kz", position: "Отдел закупок", user_id: null, has_voiceprint: false, created_at: ts(-40) },
-  { id: 6, name: "Айгерим Жумабаева", email: "admin@hattama.kz", position: "Секретарь правления", user_id: 1, has_voiceprint: true, created_at: ts(-60) },
+  { id: 1, name: "Айбек Нуров", email: "a.nurov@kenes.ai", position: "Директор по ИТ", user_id: null, has_voiceprint: true, created_at: ts(-50) },
+  { id: 2, name: "Динара Касымова", email: "d.kassymova@kenes.ai", position: "Главный бухгалтер", user_id: null, has_voiceprint: false, created_at: ts(-50) },
+  { id: 3, name: "Ержан Абенов", email: "e.abenov@kenes.ai", position: "Юрист", user_id: null, has_voiceprint: true, created_at: ts(-50) },
+  { id: 4, name: "Мария Ким", email: "m.kim@kenes.ai", position: "HR-менеджер", user_id: null, has_voiceprint: false, created_at: ts(-45) },
+  { id: 5, name: "Тимур Ахметов", email: "t.akhmetov@kenes.ai", position: "Отдел закупок", user_id: null, has_voiceprint: false, created_at: ts(-40) },
+  { id: 6, name: "Айгерим Жумабаева", email: "admin@kenes.ai", position: "Секретарь правления", user_id: 1, has_voiceprint: true, created_at: ts(-60) },
 ];
 
 export const seedDirections: Direction[] = [

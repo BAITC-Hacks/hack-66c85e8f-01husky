@@ -1,10 +1,10 @@
 "use client";
 
-import { Lock, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { toast } from "sonner";
-import { EmptyState, PageHeader } from "@/components/common/bits";
+import { PageHeader } from "@/components/common/bits";
+import { ErrorScreen, QueryError } from "@/components/common/error-screen";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -15,33 +15,27 @@ import { cn } from "@/lib/utils";
 export default function DirectionsPage() {
   const t = useTranslations("directions");
   const { data: me } = useMe();
-  const { data = [] } = useDirections();
+  const { data = [], error, refetch } = useDirections();
   const create = useCreateDirection();
   const update = useUpdateDirection();
   const [name, setName] = useState("");
   const [editing, setEditing] = useState<{ id: number; name: string } | null>(null);
 
   if (me && me.role !== "admin") {
-    return <EmptyState title={t("adminOnly")} action={<Lock className="text-muted-foreground size-5" />} />;
+    return <ErrorScreen variant="forbidden" />;
   }
 
   const add = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-    create.mutate(
-      { name: name.trim() },
-      { onSuccess: () => setName(""), onError: (err) => toast.error(err.message) },
-    );
+    create.mutate({ name: name.trim() }, { onSuccess: () => setName("") });
   };
 
   const rename = () => {
     if (!editing) return;
     const orig = data.find((d) => d.id === editing.id);
     if (editing.name.trim() && editing.name !== orig?.name) {
-      update.mutate(
-        { id: editing.id, name: editing.name.trim() },
-        { onError: (err) => toast.error(err.message) },
-      );
+      update.mutate({ id: editing.id, name: editing.name.trim() });
     }
     setEditing(null);
   };
@@ -62,44 +56,46 @@ export default function DirectionsPage() {
         </Button>
       </form>
 
-      <ol className="bg-card shadow-soft overflow-hidden rounded-xl border">
-        {data.map((d, i) => (
-          <li key={d.id} className="flex items-center gap-4 border-b px-4 py-3 last:border-b-0">
-            <span className="text-muted-foreground tabular w-6 font-mono text-[11px]">
-              {String(i + 1).padStart(2, "0")}
-            </span>
-            {editing?.id === d.id ? (
-              <Input
-                autoFocus
-                value={editing.name}
-                onChange={(e) => setEditing({ id: d.id, name: e.target.value })}
-                onBlur={rename}
-                onKeyDown={(e) => e.key === "Enter" && rename()}
-                className="h-8 flex-1"
-              />
-            ) : (
-              <button
-                onClick={() => setEditing({ id: d.id, name: d.name })}
-                className={cn(
-                  "font-heading flex-1 text-left text-[15px]",
-                  !d.is_active && "text-muted-foreground line-through",
-                )}
-              >
-                {d.name}
-              </button>
-            )}
-            <label className="text-muted-foreground inline-flex items-center gap-2 text-xs">
-              {t("active")}
-              <Switch
-                checked={d.is_active}
-                onCheckedChange={(v) =>
-                  update.mutate({ id: d.id, is_active: v }, { onError: (err) => toast.error(err.message) })
-                }
-              />
-            </label>
-          </li>
-        ))}
-      </ol>
+      {error ? (
+        <QueryError error={error} onRetry={() => refetch()} />
+      ) : (
+        <ol className="bg-card shadow-soft overflow-hidden rounded-xl border">
+          {data.map((d, i) => (
+            <li key={d.id} className="flex items-center gap-4 border-b px-4 py-3 last:border-b-0">
+              <span className="text-muted-foreground tabular w-6 font-mono text-[11px]">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              {editing?.id === d.id ? (
+                <Input
+                  autoFocus
+                  value={editing.name}
+                  onChange={(e) => setEditing({ id: d.id, name: e.target.value })}
+                  onBlur={rename}
+                  onKeyDown={(e) => e.key === "Enter" && rename()}
+                  className="h-8 flex-1"
+                />
+              ) : (
+                <button
+                  onClick={() => setEditing({ id: d.id, name: d.name })}
+                  className={cn(
+                    "font-heading flex-1 text-left text-[15px]",
+                    !d.is_active && "text-muted-foreground line-through",
+                  )}
+                >
+                  {d.name}
+                </button>
+              )}
+              <label className="text-muted-foreground inline-flex items-center gap-2 text-xs">
+                {t("active")}
+                <Switch
+                  checked={d.is_active}
+                  onCheckedChange={(v) => update.mutate({ id: d.id, is_active: v })}
+                />
+              </label>
+            </li>
+          ))}
+        </ol>
+      )}
     </div>
   );
 }

@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Хаттама design tokens, Loom-inspired: airy lavender-grey canvas, white
+ * Kenes AI design tokens, Loom-inspired: airy lavender-grey canvas, white
  * cards with soft shadows, "blurple" brand, deep indigo hero surfaces.
  * Never hardcode colors in components; add a token here (light + .dark).
  */
@@ -82,6 +82,8 @@
   --night: #16123f;
   --brand: #625df5;
   --brand-soft: #efeeff;
+  --logo-1: #6557ff;
+  --logo-2: #8374ff;
   --sun: #e8a317;
   --sun-soft: #fff4d9;
   --coral: #ef4f6b;
@@ -127,6 +129,8 @@
   --night: #0a0820;
   --brand: #7c77ff;
   --brand-soft: #25225a;
+  --logo-1: #8b80ff;
+  --logo-2: #aea5ff;
   --sun: #ffc14d;
   --sun-soft: #3a2f16;
   --coral: #ff7088;

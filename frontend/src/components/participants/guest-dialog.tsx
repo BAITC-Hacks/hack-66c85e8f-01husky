@@ -2,7 +2,6 @@
 
 import { useTranslations } from "next-intl";
 import { useState, type ReactNode } from "react";
-import { toast } from "sonner";
 import { Field } from "@/components/common/field";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,7 +48,6 @@ export function GuestDialog({
           setEmail("");
           setPosition("");
         },
-        onError: (err) => toast.error(err.message),
       },
     );
   };

@@ -18,6 +18,8 @@ export function useLogin() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: LoginBody) => api.post<User>("/auth/login", body),
+    // 401 here means wrong credentials, not an expired session: the form shows it inline.
+    meta: { silent: true },
     onSuccess: (user) => qc.setQueryData(qk.me, user),
   });
 }
