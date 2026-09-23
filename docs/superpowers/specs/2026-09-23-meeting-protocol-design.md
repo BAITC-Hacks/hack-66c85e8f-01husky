@@ -287,7 +287,8 @@ Celery:
 
 ## 10. Конвенции
 
-- Ветки: `feat/<area>-<short>`, PR в `main`, squash. Маленькие PR, часто.
+- Ветки: базовая ветка `develop`. Задачи в `feat/<task-desc>` от `develop`, только через Pull Request в `develop`, прямые пуши в `develop` и `main` запрещены. Маленькие PR, часто.
+- `develop` → `main`: после интеграционного теста всей команды, одним PR.
 - Коммиты: Conventional Commits (`feat(backend): ...`, `fix(pipeline): ...`, `spec: ...`).
 - Python: ruff + ruff format, type hints обязательны, pydantic v2. TS: eslint + prettier, strict.
 - Секреты только в `.env` (gitignored). `.env.example` с локальными значениями по умолчанию.
