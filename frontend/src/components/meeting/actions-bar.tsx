@@ -25,12 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { downloadFile } from "@/lib/api/download";
-import {
-  useDeleteAudio,
-  useDeleteMeeting,
-  useMeetingAction,
-  useSendToSed,
-} from "@/lib/api/queries/meetings";
+import { useDeleteAudio, useDeleteMeeting, useMeetingAction, useSendToSed } from "@/lib/api/queries/meetings";
 import type { ExportFormat, Locale, Meeting } from "@/lib/api/types";
 import { ConfirmAction } from "./confirm-action";
 
@@ -56,7 +51,11 @@ export function ActionsBar({ meeting, onConfirmed }: { meeting: Meeting; onConfi
     const key = `${format}-${lang}`;
     setExporting(key);
     try {
-      await downloadFile(`/meetings/${meeting.id}/export`, { format, lang }, `protocol-${meeting.id}.${format}`);
+      await downloadFile(
+        `/meetings/${meeting.id}/export`,
+        { format, lang },
+        `protocol-${meeting.id}.${format}`,
+      );
     } catch (e) {
       fail(e as Error);
     } finally {
@@ -68,14 +67,24 @@ export function ActionsBar({ meeting, onConfirmed }: { meeting: Meeting; onConfi
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" disabled={busy || !!exporting}>
-          {exporting?.startsWith(format) ? <Loader2 className="animate-spin" /> : format === "pdf" ? <Download /> : <FileText />}
+          {exporting?.startsWith(format) ? (
+            <Loader2 className="animate-spin" />
+          ) : format === "pdf" ? (
+            <Download />
+          ) : (
+            <FileText />
+          )}
           {t(format)}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuLabel className="text-xs text-muted-foreground">{t("exportLang")}</DropdownMenuLabel>
-        <DropdownMenuItem onClick={() => doExport(format, "ru")}>Русский · {format.toUpperCase()}</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => doExport(format, "kk")}>Қазақша · {format.toUpperCase()}</DropdownMenuItem>
+        <DropdownMenuLabel className="text-muted-foreground text-xs">{t("exportLang")}</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => doExport(format, "ru")}>
+          Русский · {format.toUpperCase()}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => doExport(format, "kk")}>
+          Қазақша · {format.toUpperCase()}
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -156,7 +165,9 @@ export function ActionsBar({ meeting, onConfirmed }: { meeting: Meeting; onConfi
         body={t("deleteAudioBody")}
         actionLabel={t("deleteAudio")}
         destructive
-        onConfirm={() => delAudio.mutate(undefined, { onSuccess: () => toast(t("audioDeleted")), onError: fail })}
+        onConfirm={() =>
+          delAudio.mutate(undefined, { onSuccess: () => toast(t("audioDeleted")), onError: fail })
+        }
       />
       <ConfirmAction
         open={dialog === "delete"}
@@ -165,7 +176,9 @@ export function ActionsBar({ meeting, onConfirmed }: { meeting: Meeting; onConfi
         body={meeting.title}
         actionLabel={t("delete")}
         destructive
-        onConfirm={() => delMeeting.mutate(meeting.id, { onSuccess: () => router.replace("/meetings"), onError: fail })}
+        onConfirm={() =>
+          delMeeting.mutate(meeting.id, { onSuccess: () => router.replace("/meetings"), onError: fail })
+        }
       />
     </div>
   );

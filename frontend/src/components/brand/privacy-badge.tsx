@@ -6,12 +6,18 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { cn } from "@/lib/utils";
 
 /** "Data never leaves the perimeter", the key selling point of spec §2. */
-export function PrivacyBadge({ modelInfo, className }: { modelInfo?: Record<string, string> | null; className?: string }) {
+export function PrivacyBadge({
+  modelInfo,
+  className,
+}: {
+  modelInfo?: Record<string, string> | null;
+  className?: string;
+}) {
   const t = useTranslations("privacy");
   const badge = (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border border-mint/40 bg-mint/10 px-2.5 py-1 text-xs font-medium text-mint",
+        "border-mint/40 bg-mint/10 text-mint inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium",
         className,
       )}
     >

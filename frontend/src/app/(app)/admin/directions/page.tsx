@@ -22,25 +22,26 @@ export default function DirectionsPage() {
   const [editing, setEditing] = useState<{ id: number; name: string } | null>(null);
 
   if (me && me.role !== "admin") {
-    return (
-      <EmptyState
-        title={t("adminOnly")}
-        action={<Lock className="size-5 text-muted-foreground" />}
-      />
-    );
+    return <EmptyState title={t("adminOnly")} action={<Lock className="text-muted-foreground size-5" />} />;
   }
 
   const add = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-    create.mutate({ name: name.trim() }, { onSuccess: () => setName(""), onError: (err) => toast.error(err.message) });
+    create.mutate(
+      { name: name.trim() },
+      { onSuccess: () => setName(""), onError: (err) => toast.error(err.message) },
+    );
   };
 
   const rename = () => {
     if (!editing) return;
     const orig = data.find((d) => d.id === editing.id);
     if (editing.name.trim() && editing.name !== orig?.name) {
-      update.mutate({ id: editing.id, name: editing.name.trim() }, { onError: (err) => toast.error(err.message) });
+      update.mutate(
+        { id: editing.id, name: editing.name.trim() },
+        { onError: (err) => toast.error(err.message) },
+      );
     }
     setEditing(null);
   };
@@ -50,16 +51,23 @@ export default function DirectionsPage() {
       <PageHeader eyebrow={t("subtitle")} title={t("title")} />
 
       <form onSubmit={add} className="mb-6 flex gap-2">
-        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("placeholder")} className="h-10" />
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder={t("placeholder")}
+          className="h-10 min-w-0 flex-1"
+        />
         <Button type="submit" size="lg" className="h-10" disabled={create.isPending || !name.trim()}>
-          <Plus /> {t("add")}
+          <Plus /> <span className="hidden sm:inline">{t("add")}</span>
         </Button>
       </form>
 
-      <ol className="overflow-hidden rounded-xl border bg-card shadow-soft">
+      <ol className="bg-card shadow-soft overflow-hidden rounded-xl border">
         {data.map((d, i) => (
           <li key={d.id} className="flex items-center gap-4 border-b px-4 py-3 last:border-b-0">
-            <span className="w-6 font-mono text-[11px] text-muted-foreground tabular">{String(i + 1).padStart(2, "0")}</span>
+            <span className="text-muted-foreground tabular w-6 font-mono text-[11px]">
+              {String(i + 1).padStart(2, "0")}
+            </span>
             {editing?.id === d.id ? (
               <Input
                 autoFocus
@@ -72,16 +80,21 @@ export default function DirectionsPage() {
             ) : (
               <button
                 onClick={() => setEditing({ id: d.id, name: d.name })}
-                className={cn("flex-1 text-left font-heading text-[15px]", !d.is_active && "text-muted-foreground line-through")}
+                className={cn(
+                  "font-heading flex-1 text-left text-[15px]",
+                  !d.is_active && "text-muted-foreground line-through",
+                )}
               >
                 {d.name}
               </button>
             )}
-            <label className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+            <label className="text-muted-foreground inline-flex items-center gap-2 text-xs">
               {t("active")}
               <Switch
                 checked={d.is_active}
-                onCheckedChange={(v) => update.mutate({ id: d.id, is_active: v }, { onError: (err) => toast.error(err.message) })}
+                onCheckedChange={(v) =>
+                  update.mutate({ id: d.id, is_active: v }, { onError: (err) => toast.error(err.message) })
+                }
               />
             </label>
           </li>

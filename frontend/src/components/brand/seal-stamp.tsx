@@ -23,7 +23,7 @@ export function SealStamp({
   return (
     <div
       className={cn(
-        "pointer-events-none select-none text-primary mix-blend-multiply dark:mix-blend-screen",
+        "text-primary pointer-events-none mix-blend-multiply select-none dark:mix-blend-screen",
         animate ? "animate-stamp" : "-rotate-12",
         className,
       )}
@@ -44,7 +44,15 @@ export function SealStamp({
           <text fontSize="8.4" fontWeight="700" letterSpacing="1.2" fill="currentColor" className="font-sans">
             <textPath href={`#${id}`}>{ring.slice(0, 42)}</textPath>
           </text>
-          <text x="60" y="56" textAnchor="middle" fontSize="11" fontWeight="700" fill="currentColor" className="font-mono">
+          <text
+            x="60"
+            y="56"
+            textAnchor="middle"
+            fontSize="11"
+            fontWeight="700"
+            fill="currentColor"
+            className="font-mono"
+          >
             {date}
           </text>
           {refNo && (

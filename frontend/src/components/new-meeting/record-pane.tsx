@@ -88,15 +88,20 @@ export function RecordPane({
         </div>
       </div>
 
-      <div className="flex flex-col items-center rounded-xl border bg-card shadow-soft px-6 py-8">
-        <div className={cn("font-mono text-6xl font-light tracking-tight tabular", live ? "text-foreground" : "text-muted-foreground/50")}>
+      <div className="bg-card shadow-soft flex flex-col items-center rounded-xl border px-6 py-8">
+        <div
+          className={cn(
+            "tabular font-mono text-6xl font-light tracking-tight",
+            live ? "text-foreground" : "text-muted-foreground/50",
+          )}
+        >
           {formatTimecode(rec.elapsed)}
         </div>
         <LevelMeter levels={rec.levels} active={live} className="mt-6 w-full max-w-md" />
-        <div className="mt-3 h-4 font-mono text-[11px] text-muted-foreground">
+        <div className="text-muted-foreground mt-3 h-4 font-mono text-[11px]">
           {live && t("sent", { size: formatBytes(rec.bytes) })}
           {rec.state === "denied" && (
-            <span className="inline-flex items-center gap-1 text-coral">
+            <span className="text-coral inline-flex items-center gap-1">
               <MicOff className="size-3" /> {t("micDenied")}
             </span>
           )}
@@ -104,12 +109,23 @@ export function RecordPane({
       </div>
 
       {live || phase === "stopping" ? (
-        <Button size="lg" variant="destructive" className="h-11" onClick={stop} disabled={phase === "stopping"}>
+        <Button
+          size="lg"
+          variant="destructive"
+          className="h-11"
+          onClick={stop}
+          disabled={phase === "stopping"}
+        >
           {phase === "stopping" ? <Loader2 className="animate-spin" /> : <Square className="fill-current" />}
           {t("stop")}
         </Button>
       ) : (
-        <Button size="lg" className="h-11 bg-rec text-white hover:bg-rec/90" onClick={start} disabled={phase === "connecting"}>
+        <Button
+          size="lg"
+          className="bg-rec hover:bg-rec/90 h-11 text-white"
+          onClick={start}
+          disabled={phase === "connecting"}
+        >
           {phase === "connecting" ? <Loader2 className="animate-spin" /> : <Mic />}
           {phase === "connecting" ? t("connecting") : t("start")}
         </Button>

@@ -21,18 +21,20 @@ export function MeetingRow({ m, index }: { m: MeetingListItem; index: number }) 
     <li className="animate-rise" style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}>
       <Link
         href={`/meetings/${m.id}`}
-        className="group relative grid grid-cols-[3.5rem_1fr_auto] items-center gap-4 overflow-hidden rounded-xl border bg-card shadow-soft px-4 py-4 transition-all hover:-translate-y-px hover:border-primary/40 hover:shadow-lift sm:grid-cols-[4.5rem_1fr_auto_auto] sm:px-5"
+        className="group bg-card shadow-soft hover:border-primary/40 hover:shadow-lift relative grid grid-cols-[3.25rem_1fr_auto] items-center gap-3 overflow-hidden rounded-xl border px-4 py-4 transition-all hover:-translate-y-px sm:grid-cols-[4.5rem_1fr_auto_auto] sm:gap-4 sm:px-5"
       >
         {/* date block, like a register column */}
-        <div className="flex flex-col items-center border-r pr-4 text-center">
-          <span className="font-heading text-3xl leading-none font-bold text-primary tabular">{formatDate(m.meeting_date, locale, "dd")}</span>
-          <span className="mt-1 font-mono text-[10px] tracking-wider text-muted-foreground uppercase">
-            {formatDate(m.meeting_date, locale, "MMM yy")}
+        <div className="flex flex-col items-center border-r pr-3 text-center sm:pr-4">
+          <span className="font-heading text-primary tabular text-3xl leading-none font-bold">
+            {formatDate(m.meeting_date, locale, "dd")}
+          </span>
+          <span className="text-muted-foreground mt-1 font-mono text-[9px] tracking-wide whitespace-nowrap uppercase sm:text-[10px]">
+            {formatDate(m.meeting_date, locale, "MMM")}
           </span>
         </div>
 
         <div className="min-w-0">
-          <div className="mb-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] text-muted-foreground">
+          <div className="text-muted-foreground mb-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px]">
             <span>{t("registerNo", { id: m.id })}</span>
             <span className="inline-flex items-center gap-1">
               <SourceIcon source={m.source} className="size-3" />
@@ -44,29 +46,31 @@ export function MeetingRow({ m, index }: { m: MeetingListItem; index: number }) 
             </span>
             <span className="uppercase">{m.output_language === "kk" ? "KZ" : "RU"}</span>
           </div>
-          <h3 className="truncate font-heading text-lg font-medium group-hover:text-primary">{m.title}</h3>
+          <h3 className="font-heading group-hover:text-primary line-clamp-2 text-base leading-snug font-semibold sm:truncate sm:text-lg">
+            {m.title}
+          </h3>
           <div className="mt-2 flex items-center gap-3 sm:hidden">
             <MeetingStatusBadge status={m.status} />
-            <span className="text-xs text-muted-foreground">{t("tasksCount", { count: m.tasks_count })}</span>
+            <span className="text-muted-foreground text-xs">{t("tasksCount", { count: m.tasks_count })}</span>
           </div>
         </div>
 
         <div className="hidden flex-col items-end gap-2 sm:flex">
           <MeetingStatusBadge status={m.status} />
           <div className="flex items-center gap-3">
-            <span className={cn("text-xs text-muted-foreground", m.tasks_count && "text-foreground")}>
+            <span className={cn("text-muted-foreground text-xs", m.tasks_count && "text-foreground")}>
               {t("tasksCount", { count: m.tasks_count })}
             </span>
             <AvatarStack names={m.participants.map((p) => p.name)} />
           </div>
         </div>
 
-        <ChevronRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+        <ChevronRight className="text-muted-foreground size-4 transition-transform group-hover:translate-x-0.5" />
 
         {busy && (
-          <span className="absolute inset-x-0 bottom-0 h-[2px] bg-primary/15">
+          <span className="bg-primary/15 absolute inset-x-0 bottom-0 h-[2px]">
             <span
-              className="block h-full bg-primary transition-[width] duration-700"
+              className="bg-primary block h-full transition-[width] duration-700"
               style={{ width: `${Math.max(4, Math.round((m.progress_pct ?? 0) * 100))}%` }}
             />
           </span>

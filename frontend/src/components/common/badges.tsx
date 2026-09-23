@@ -4,7 +4,8 @@ import { useTranslations } from "next-intl";
 import type { MeetingStatus, TaskStatus, Urgency } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 
-const pill = "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap";
+const pill =
+  "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap";
 
 const MEETING_TONE: Record<MeetingStatus, string> = {
   uploaded: "border-border bg-muted text-muted-foreground",

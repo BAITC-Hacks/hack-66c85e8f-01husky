@@ -35,19 +35,24 @@ export function SpeakerRibbon({
   const ticks = [0, 0.25, 0.5, 0.75, 1];
 
   return (
-    <section className="rounded-xl border bg-card shadow-soft p-4 sm:p-5">
+    <section className="bg-card shadow-soft rounded-xl border p-4 sm:p-5">
       <div className="mb-3 flex items-baseline justify-between">
-        <h3 className="text-xs font-semibold tracking-wide text-primary uppercase">{t("timeline")}</h3>
-        <span className="font-mono text-[11px] text-muted-foreground">{formatTimecode(total)}</span>
+        <h3 className="text-primary text-xs font-semibold tracking-wide uppercase">{t("timeline")}</h3>
+        <span className="text-muted-foreground font-mono text-[11px]">{formatTimecode(total)}</span>
       </div>
       <div className="grid gap-1.5">
         {speakers.map((sp) => (
-          <div key={sp} className="grid grid-cols-[7rem_1fr_2.5rem] items-center gap-3 sm:grid-cols-[10rem_1fr_3rem]">
+          <div
+            key={sp}
+            className="grid grid-cols-[7rem_1fr_2.5rem] items-center gap-3 sm:grid-cols-[10rem_1fr_3rem]"
+          >
             <span className="flex min-w-0 items-center gap-1.5 text-xs">
               <span className="size-2 shrink-0 rounded-full" style={{ background: speakerColor(sp) }} />
-              <span className={cn("truncate", !nameOf(sp) && "font-mono text-muted-foreground")}>{nameOf(sp) ?? sp}</span>
+              <span className={cn("truncate", !nameOf(sp) && "text-muted-foreground font-mono")}>
+                {nameOf(sp) ?? sp}
+              </span>
             </span>
-            <div className="relative h-5 rounded-sm bg-muted/60">
+            <div className="bg-muted/60 relative h-5 rounded-sm">
               {segments
                 .filter((s) => s.speaker === sp)
                 .map((s) => (
@@ -57,7 +62,7 @@ export function SpeakerRibbon({
                         onClick={() => onSelect(s.idx)}
                         className={cn(
                           "absolute inset-y-0.5 rounded-[2px] transition-all hover:inset-y-0 hover:brightness-110",
-                          activeIdx === s.idx && "inset-y-0 ring-2 ring-foreground/70",
+                          activeIdx === s.idx && "ring-foreground/70 inset-y-0 ring-2",
                         )}
                         style={{
                           left: `${(s.start / total) * 100}%`,
@@ -74,7 +79,7 @@ export function SpeakerRibbon({
                   </Tooltip>
                 ))}
             </div>
-            <span className="text-right font-mono text-[11px] text-muted-foreground tabular">
+            <span className="text-muted-foreground tabular text-right font-mono text-[11px]">
               {Math.round(((share[sp] ?? 0) / total) * 100)}%
             </span>
           </div>
@@ -87,7 +92,7 @@ export function SpeakerRibbon({
             <span
               key={f}
               className={cn(
-                "absolute -translate-x-1/2 font-mono text-[9px] text-muted-foreground first:translate-x-0 last:-translate-x-full",
+                "text-muted-foreground absolute -translate-x-1/2 font-mono text-[9px] first:translate-x-0 last:-translate-x-full",
                 i % 2 === 1 && "hidden sm:inline",
               )}
               style={{ left: `${f * 100}%` }}

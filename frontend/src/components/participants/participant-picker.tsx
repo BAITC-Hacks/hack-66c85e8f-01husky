@@ -5,7 +5,14 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { ParticipantAvatar } from "@/components/common/bits";
 import { Button } from "@/components/ui/button";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useParticipants } from "@/lib/api/queries/participants";
 import { cn } from "@/lib/utils";
@@ -27,7 +34,8 @@ export function ParticipantPicker({
   const { data: all = [] } = useParticipants();
   const [open, setOpen] = useState(false);
   const selected = all.filter((p) => value.includes(p.id));
-  const toggle = (id: number) => onChange(value.includes(id) ? value.filter((x) => x !== id) : [...value, id]);
+  const toggle = (id: number) =>
+    onChange(value.includes(id) ? value.filter((x) => x !== id) : [...value, id]);
 
   return (
     <div className="grid gap-2">
@@ -38,7 +46,7 @@ export function ParticipantPicker({
               variant="outline"
               role="combobox"
               aria-invalid={invalid}
-              className="h-10 flex-1 justify-between font-normal text-muted-foreground"
+              className="text-muted-foreground h-10 flex-1 justify-between font-normal"
             >
               {value.length ? `${t("participants")}: ${value.length}` : t("participantsPlaceholder")}
               <ChevronsUpDown className="size-4 opacity-50" />
@@ -51,15 +59,21 @@ export function ParticipantPicker({
                 <CommandEmpty>{tc("notFound")}</CommandEmpty>
                 <CommandGroup>
                   {all.map((p) => (
-                    <CommandItem key={p.id} value={`${p.name} ${p.position ?? ""} ${p.email ?? ""}`} onSelect={() => toggle(p.id)}>
+                    <CommandItem
+                      key={p.id}
+                      value={`${p.name} ${p.position ?? ""} ${p.email ?? ""}`}
+                      onSelect={() => toggle(p.id)}
+                    >
                       <ParticipantAvatar name={p.name} size="sm" />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate">{p.name}</span>
-                        <span className="block truncate text-xs text-muted-foreground">
+                        <span className="text-muted-foreground block truncate text-xs">
                           {p.position ?? (p.user_id ? tp("account") : tp("guest"))}
                         </span>
                       </span>
-                      {p.has_voiceprint && <AudioWaveform className="size-3.5 text-mint" aria-label={tp("hasVoiceprint")} />}
+                      {p.has_voiceprint && (
+                        <AudioWaveform className="text-mint size-3.5" aria-label={tp("hasVoiceprint")} />
+                      )}
                       <Check className={cn("size-4", value.includes(p.id) ? "opacity-100" : "opacity-0")} />
                     </CommandItem>
                   ))}
@@ -83,15 +97,15 @@ export function ParticipantPicker({
           {selected.map((p) => (
             <li
               key={p.id}
-              className="inline-flex items-center gap-1.5 rounded-full border bg-card py-0.5 pr-1 pl-0.5 text-sm"
+              className="bg-card inline-flex items-center gap-1.5 rounded-full border py-0.5 pr-1 pl-0.5 text-sm"
             >
               <ParticipantAvatar name={p.name} size="sm" />
               {p.name}
-              {p.has_voiceprint && <AudioWaveform className="size-3 text-mint" />}
+              {p.has_voiceprint && <AudioWaveform className="text-mint size-3" />}
               <button
                 type="button"
                 onClick={() => toggle(p.id)}
-                className="rounded-full p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-full p-0.5"
                 aria-label={tc("delete")}
               >
                 <X className="size-3" />

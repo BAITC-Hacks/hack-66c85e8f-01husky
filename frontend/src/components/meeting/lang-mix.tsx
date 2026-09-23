@@ -15,7 +15,7 @@ export function LangMix({ stats }: { stats: Record<string, number> }) {
   const entries = Object.entries(stats).filter(([, v]) => v > 0);
   return (
     <div className="grid gap-2">
-      <div className="flex h-2 overflow-hidden rounded-full bg-muted">
+      <div className="bg-muted flex h-2 overflow-hidden rounded-full">
         {entries.map(([k, v]) => (
           <span key={k} style={{ width: `${v * 100}%`, background: COLORS[k] ?? COLORS.other }} />
         ))}
@@ -25,7 +25,7 @@ export function LangMix({ stats }: { stats: Record<string, number> }) {
           <span key={k} className="inline-flex items-center gap-1.5">
             <span className="size-2 rounded-full" style={{ background: COLORS[k] ?? COLORS.other }} />
             {t.has(k) ? t(k as "ru") : k}
-            <span className="font-mono text-muted-foreground">{Math.round(v * 100)}%</span>
+            <span className="text-muted-foreground font-mono">{Math.round(v * 100)}%</span>
           </span>
         ))}
       </div>

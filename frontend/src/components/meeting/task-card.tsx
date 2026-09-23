@@ -45,13 +45,15 @@ export function TaskCard({
     <li
       id={`task-${task.id}`}
       className={cn(
-        "group relative rounded-xl border bg-card shadow-soft p-4 transition-shadow",
-        highlighted && "ring-2 ring-primary",
-        low && "border-l-4 border-l-coral/70",
+        "group bg-card shadow-soft relative rounded-xl border p-4 transition-shadow",
+        highlighted && "ring-primary ring-2",
+        low && "border-l-coral/70 border-l-4",
       )}
     >
       <div className="flex items-start gap-3">
-        <span className="mt-1 font-mono text-[11px] text-muted-foreground tabular">{String(index + 1).padStart(2, "0")}</span>
+        <span className="text-muted-foreground tabular mt-1 font-mono text-[11px]">
+          {String(index + 1).padStart(2, "0")}
+        </span>
         <div className="min-w-0 flex-1">
           <textarea
             value={text}
@@ -59,16 +61,18 @@ export function TaskCard({
             rows={1}
             onChange={(e) => setText(e.target.value)}
             onBlur={() => text.trim() && text !== task.text && save({ text: text.trim() })}
-            className="field-sizing-content w-full resize-none rounded-sm bg-transparent font-heading text-[15px] leading-snug font-medium outline-none focus:bg-muted/50 focus:ring-2 focus:ring-ring/30 disabled:cursor-default"
+            className="font-heading focus:bg-muted/50 focus:ring-ring/30 field-sizing-content w-full resize-none rounded-sm bg-transparent text-[15px] leading-snug font-medium outline-none focus:ring-2 disabled:cursor-default"
           />
           {task.quote && (
             <button
               onClick={onQuote}
-              className="mt-1.5 flex w-full items-start gap-1.5 text-left text-xs text-muted-foreground transition-colors hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground mt-1.5 flex w-full items-start gap-1.5 text-left text-xs transition-colors"
               title={t("showInTranscript")}
             >
-              <Quote className="mt-0.5 size-3 shrink-0 text-primary" />
-              <span className="line-clamp-2 italic underline decoration-primary/40 decoration-dotted underline-offset-4">{task.quote}</span>
+              <Quote className="text-primary mt-0.5 size-3 shrink-0" />
+              <span className="decoration-primary/40 line-clamp-2 italic underline decoration-dotted underline-offset-4">
+                {task.quote}
+              </span>
             </button>
           )}
         </div>
@@ -78,7 +82,10 @@ export function TaskCard({
             size="icon-sm"
             className="opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
             onClick={() =>
-              del.mutate({ id: task.id, meetingId: task.meeting_id }, { onSuccess: () => toast(t("deleted")) })
+              del.mutate(
+                { id: task.id, meetingId: task.meeting_id },
+                { onSuccess: () => toast(t("deleted")) },
+              )
             }
             aria-label="delete"
           >
@@ -87,7 +94,7 @@ export function TaskCard({
         )}
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2 pl-7">
+      <div className="mt-3 grid grid-cols-1 gap-2 min-[420px]:grid-cols-2 sm:pl-7">
         <AssigneeSelect
           value={task.assignee_participant_id}
           fallbackName={task.assignee_name}
@@ -111,11 +118,11 @@ export function TaskCard({
         />
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 pl-7 text-xs">
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:pl-7">
         <TaskStatusBadge status={task.status} />
         {task.deadline_raw && <span className="text-muted-foreground italic">«{task.deadline_raw}»</span>}
-        <span className="ml-auto inline-flex items-center gap-1.5 text-muted-foreground">
-          {low && <AlertTriangle className="size-3 text-coral" aria-label={t("lowConfidence")} />}
+        <span className="text-muted-foreground ml-auto inline-flex items-center gap-1.5">
+          {low && <AlertTriangle className="text-coral size-3" aria-label={t("lowConfidence")} />}
           {task.segment_idx < 0 ? t("manual") : <ConfidenceMeter value={task.confidence} />}
         </span>
       </div>

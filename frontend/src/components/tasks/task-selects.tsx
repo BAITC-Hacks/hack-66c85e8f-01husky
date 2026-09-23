@@ -28,14 +28,16 @@ export function AssigneeSelect({
 }) {
   const t = useTranslations("taskTable");
   return (
-    <Select disabled={disabled} value={value ? String(value) : NONE} onValueChange={(v) => onChange(v === NONE ? null : Number(v))}>
-      <SelectTrigger className={cn(trigger, !value && "border-dashed border-coral/50 text-coral", className)}>
+    <Select
+      disabled={disabled}
+      value={value ? String(value) : NONE}
+      onValueChange={(v) => onChange(v === NONE ? null : Number(v))}
+    >
+      <SelectTrigger className={cn(trigger, !value && "border-coral/50 text-coral border-dashed", className)}>
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value={NONE}>
-          {fallbackName ? `${fallbackName} · ${t("unmatched")}` : "—"}
-        </SelectItem>
+        <SelectItem value={NONE}>{fallbackName ? `${fallbackName} · ${t("unmatched")}` : "—"}</SelectItem>
         {participants.map((p) => (
           <SelectItem key={p.id} value={String(p.id)}>
             {p.name}
@@ -46,7 +48,15 @@ export function AssigneeSelect({
   );
 }
 
-export function UrgencySelect({ value, onChange, disabled }: { value: Urgency; onChange: (u: Urgency) => void; disabled?: boolean }) {
+export function UrgencySelect({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: Urgency;
+  onChange: (u: Urgency) => void;
+  disabled?: boolean;
+}) {
   return (
     <Select disabled={disabled} value={value} onValueChange={(v) => onChange(v as Urgency)}>
       <SelectTrigger className={trigger}>
@@ -103,10 +113,18 @@ export function StatusSelect({
   disabled?: boolean;
 }) {
   const options: TaskStatus[] =
-    value === "draft" ? ["draft"] : value === "overdue" ? ["overdue", "in_progress", "done"] : ["confirmed", "in_progress", "done"];
+    value === "draft"
+      ? ["draft"]
+      : value === "overdue"
+        ? ["overdue", "in_progress", "done"]
+        : ["confirmed", "in_progress", "done"];
   return (
-    <Select disabled={disabled || value === "draft"} value={value} onValueChange={(v) => onChange(v as TaskStatus)}>
-      <SelectTrigger className="h-8 w-[9.5rem] border-transparent bg-transparent px-1 shadow-none hover:border-border">
+    <Select
+      disabled={disabled || value === "draft"}
+      value={value}
+      onValueChange={(v) => onChange(v as TaskStatus)}
+    >
+      <SelectTrigger className="hover:border-border h-8 w-[9.5rem] border-transparent bg-transparent px-1 shadow-none">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

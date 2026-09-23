@@ -32,7 +32,7 @@ export function AuthGuard({ children }: { children: (user: User) => ReactNode })
 
   if (isLoading || !user) {
     return (
-      <div className="flex min-h-svh items-center justify-center text-primary">
+      <div className="text-primary flex min-h-svh items-center justify-center">
         <SealMark className="size-12 animate-pulse" />
       </div>
     );

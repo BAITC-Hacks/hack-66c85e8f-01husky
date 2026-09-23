@@ -17,23 +17,31 @@ export function PipelineStepper({ meeting }: { meeting: Meeting }) {
   const pct = Math.round((meeting.progress_pct ?? 0) * 100);
 
   return (
-    <section className="overflow-hidden rounded-xl border bg-card shadow-soft">
+    <section className="bg-card shadow-soft overflow-hidden rounded-xl border">
       <div className="flex flex-wrap items-end justify-between gap-4 border-b px-5 py-4 sm:px-6">
         <div>
-          <h2 className="font-heading text-xl font-semibold">{botRecording ? t("bot_recording") : tm("processingTitle")}</h2>
-          <p className="text-sm text-muted-foreground">{tm("processingHint")}</p>
+          <h2 className="font-heading text-xl font-semibold">
+            {botRecording ? t("bot_recording") : tm("processingTitle")}
+          </h2>
+          <p className="text-muted-foreground text-sm">{tm("processingHint")}</p>
         </div>
-        <span className="font-mono text-4xl font-light text-primary tabular">{pct}%</span>
+        <span className="text-primary tabular font-mono text-4xl font-light">{pct}%</span>
       </div>
-      <div className="h-1 bg-primary/10">
-        <div className="h-full bg-primary transition-[width] duration-1000 ease-out" style={{ width: `${Math.max(2, pct)}%` }} />
+      <div className="bg-primary/10 h-1">
+        <div
+          className="bg-primary h-full transition-[width] duration-1000 ease-out"
+          style={{ width: `${Math.max(2, pct)}%` }}
+        />
       </div>
-      <ol className="grid grid-cols-2 gap-px bg-border sm:grid-cols-3 lg:grid-cols-6">
+      <ol className="bg-border grid grid-cols-2 gap-px sm:grid-cols-3 lg:grid-cols-6">
         {STAGES.map((s, i) => {
           const done = i < current;
           const active = i === current;
           return (
-            <li key={s} className={cn("flex items-center gap-3 bg-card px-4 py-3.5", active && "bg-brand-soft/70")}>
+            <li
+              key={s}
+              className={cn("bg-card flex items-center gap-3 px-4 py-3.5", active && "bg-brand-soft/70")}
+            >
               <span
                 className={cn(
                   "flex size-7 shrink-0 items-center justify-center rounded-full border font-mono text-[11px]",
@@ -42,9 +50,21 @@ export function PipelineStepper({ meeting }: { meeting: Meeting }) {
                   !done && !active && "text-muted-foreground",
                 )}
               >
-                {done ? <Check className="size-3.5" /> : active ? <Loader2 className="size-3.5 animate-spin" /> : i + 1}
+                {done ? (
+                  <Check className="size-3.5" />
+                ) : active ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  i + 1
+                )}
               </span>
-              <span className={cn("text-sm", active ? "font-medium" : "text-muted-foreground", done && "text-foreground")}>
+              <span
+                className={cn(
+                  "text-sm",
+                  active ? "font-medium" : "text-muted-foreground",
+                  done && "text-foreground",
+                )}
+              >
                 {t(s)}
               </span>
             </li>

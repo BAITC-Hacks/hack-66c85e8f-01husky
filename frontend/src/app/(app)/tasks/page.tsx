@@ -47,7 +47,9 @@ function FilterSelect<T extends string | number>({
   const tc = useTranslations("common");
   return (
     <div className="grid min-w-0 gap-1">
-      <Label className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">{label}</Label>
+      <Label className="text-muted-foreground text-[11px] font-semibold tracking-wide uppercase">
+        {label}
+      </Label>
       <Select
         value={value === undefined ? ALL : String(value)}
         onValueChange={(v) => {
@@ -92,7 +94,10 @@ export default function TasksPage() {
   const rows = useMemo(
     () =>
       (tasks ?? [])
-        .filter((task) => !dueSoon || (deadlineInfo(task.deadline, task.status).tone === "soon" && task.status !== "draft"))
+        .filter(
+          (task) =>
+            !dueSoon || (deadlineInfo(task.deadline, task.status).tone === "soon" && task.status !== "draft"),
+        )
         .sort((a, b) => (a.deadline ?? "9999").localeCompare(b.deadline ?? "9999")),
     [tasks, dueSoon],
   );
@@ -117,7 +122,7 @@ export default function TasksPage() {
         eyebrow={t("subtitle")}
         title={t("title")}
         actions={
-          <label className="inline-flex cursor-pointer items-center gap-2.5 rounded-xl border bg-card shadow-soft px-3 py-2 text-sm">
+          <label className="bg-card shadow-soft inline-flex cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2 text-sm">
             <Switch checked={!!filters.mine} onCheckedChange={(v) => set("mine", v || undefined)} />
             {t("onlyMine")}
           </label>
@@ -125,7 +130,7 @@ export default function TasksPage() {
       />
 
       {/* Counters */}
-      <div className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-2.5 sm:mb-8 sm:gap-3 lg:grid-cols-4">
         {COUNTERS.map(({ key, icon: Icon, tone }) => {
           const active = key === "due_soon" ? dueSoon : filters.status === key;
           return (
@@ -133,17 +138,20 @@ export default function TasksPage() {
               key={key}
               onClick={() => onCounter(key)}
               className={cn(
-                "group relative overflow-hidden rounded-xl border bg-card shadow-soft p-4 text-left transition-all hover:-translate-y-px sm:p-5",
+                "group bg-card shadow-soft relative overflow-hidden rounded-xl border p-3.5 text-left transition-all hover:-translate-y-px sm:p-5",
                 active && "ring-2",
               )}
               style={{ ["--tw-ring-color" as string]: tone }}
             >
               <span className="absolute inset-x-0 top-0 h-[3px]" style={{ background: tone }} />
-              <div className="flex items-center justify-between text-muted-foreground">
+              <div className="text-muted-foreground flex items-center justify-between">
                 <span className="text-sm">{t(`counters.${key}`)}</span>
                 <Icon className="size-4" style={{ color: tone }} />
               </div>
-              <div className="mt-3 font-heading text-5xl font-bold tracking-tight tabular sm:text-6xl" style={{ color: stats ? tone : undefined }}>
+              <div
+                className="font-heading tabular mt-1 text-4xl font-bold tracking-tight sm:mt-3 sm:text-6xl"
+                style={{ color: stats ? tone : undefined }}
+              >
                 {stats ? stats[key as keyof TaskStats] : "·"}
               </div>
             </button>
@@ -152,7 +160,7 @@ export default function TasksPage() {
       </div>
 
       {/* Filters */}
-      <div className="mb-4 grid grid-cols-2 items-end gap-3 rounded-xl border bg-card shadow-soft p-3 sm:grid-cols-3 lg:grid-cols-[repeat(5,minmax(0,1fr))_auto]">
+      <div className="bg-card shadow-soft mb-4 grid grid-cols-2 items-end gap-3 rounded-xl border p-3 sm:grid-cols-3 lg:grid-cols-[repeat(5,minmax(0,1fr))_auto]">
         <FilterSelect<TaskStatus>
           label={t("filters.status")}
           value={filters.status}
@@ -205,71 +213,127 @@ export default function TasksPage() {
       ) : rows.length === 0 ? (
         <EmptyState title={t("empty")} />
       ) : (
-        <div className="overflow-hidden rounded-xl border bg-card shadow-soft">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/40 hover:bg-muted/40">
-                <TableHead className="min-w-[18rem]">{tt("text")}</TableHead>
-                <TableHead>{tt("assignee")}</TableHead>
-                <TableHead>{tt("deadline")}</TableHead>
-                <TableHead>{tt("urgency")}</TableHead>
-                <TableHead>{tt("direction")}</TableHead>
-                <TableHead>{tt("status")}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((task) => {
-                const name = pName(task.assignee_participant_id);
-                const tone = deadlineInfo(task.deadline, task.status).tone;
-                return (
-                  <TableRow key={task.id} className={cn(tone === "overdue" && "bg-coral/[0.04]")}>
-                    <TableCell className="whitespace-normal">
-                      <div className="flex items-start gap-2">
-                        <span className="font-medium">{task.text}</span>
-                        {task.quote && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Quote className="mt-1 size-3 shrink-0 text-primary" />
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs italic">«{task.quote}»</TooltipContent>
-                          </Tooltip>
-                        )}
-                      </div>
+        <>
+          {/* Mobile/tablet: cards */}
+          <ul className="grid gap-3 sm:grid-cols-2 lg:hidden">
+            {rows.map((task) => {
+              const name = pName(task.assignee_participant_id);
+              const tone = deadlineInfo(task.deadline, task.status).tone;
+              return (
+                <li
+                  key={task.id}
+                  className={cn(
+                    "bg-card shadow-soft rounded-xl border p-4",
+                    tone === "overdue" && "border-coral/40",
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="leading-snug font-medium">{task.text}</p>
                       <Link
                         href={`/meetings/${task.meeting_id}`}
-                        className="mt-0.5 block text-xs text-muted-foreground hover:text-primary hover:underline"
+                        className="text-muted-foreground hover:text-primary mt-0.5 block truncate text-xs"
                       >
                         № {task.meeting_id} · {task.meeting_title}
                       </Link>
-                    </TableCell>
-                    <TableCell>
-                      <span className="inline-flex items-center gap-2">
-                        <ParticipantAvatar name={name ?? task.assignee_name} size="sm" />
-                        <span className={cn("text-sm", !name && "text-coral")}>{name ?? task.assignee_name}</span>
+                    </div>
+                    <UrgencyMark urgency={task.urgency} withLabel={false} />
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+                    <span className="inline-flex min-w-0 items-center gap-2">
+                      <ParticipantAvatar name={name ?? task.assignee_name} size="sm" />
+                      <span className={cn("truncate text-sm", !name && "text-coral")}>
+                        {name ?? task.assignee_name}
                       </span>
-                    </TableCell>
-                    <TableCell>
-                      <DeadlineLabel deadline={task.deadline} status={task.status} />
-                    </TableCell>
-                    <TableCell>
-                      <UrgencyMark urgency={task.urgency} />
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{dName(task.direction_id)}</TableCell>
-                    <TableCell>
-                      <StatusSelect
-                        value={task.status}
-                        disabled={update.isPending}
-                        onChange={(status) =>
-                          update.mutate({ id: task.id, status }, { onError: (e) => toast.error(e.message) })
-                        }
-                      />
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+                    </span>
+                    <DeadlineLabel deadline={task.deadline} status={task.status} />
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-2 border-t pt-3">
+                    <span className="text-muted-foreground truncate text-xs">{dName(task.direction_id)}</span>
+                    <StatusSelect
+                      value={task.status}
+                      disabled={update.isPending}
+                      onChange={(status) =>
+                        update.mutate({ id: task.id, status }, { onError: (e) => toast.error(e.message) })
+                      }
+                    />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+
+          {/* Desktop: table */}
+          <div className="bg-card shadow-soft hidden overflow-hidden rounded-xl border lg:block">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/40 hover:bg-muted/40">
+                  <TableHead className="min-w-[18rem]">{tt("text")}</TableHead>
+                  <TableHead>{tt("assignee")}</TableHead>
+                  <TableHead>{tt("deadline")}</TableHead>
+                  <TableHead>{tt("urgency")}</TableHead>
+                  <TableHead>{tt("direction")}</TableHead>
+                  <TableHead>{tt("status")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((task) => {
+                  const name = pName(task.assignee_participant_id);
+                  const tone = deadlineInfo(task.deadline, task.status).tone;
+                  return (
+                    <TableRow key={task.id} className={cn(tone === "overdue" && "bg-coral/[0.04]")}>
+                      <TableCell className="whitespace-normal">
+                        <div className="flex items-start gap-2">
+                          <span className="font-medium">{task.text}</span>
+                          {task.quote && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Quote className="text-primary mt-1 size-3 shrink-0" />
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs italic">«{task.quote}»</TooltipContent>
+                            </Tooltip>
+                          )}
+                        </div>
+                        <Link
+                          href={`/meetings/${task.meeting_id}`}
+                          className="text-muted-foreground hover:text-primary mt-0.5 block text-xs hover:underline"
+                        >
+                          № {task.meeting_id} · {task.meeting_title}
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center gap-2">
+                          <ParticipantAvatar name={name ?? task.assignee_name} size="sm" />
+                          <span className={cn("text-sm", !name && "text-coral")}>
+                            {name ?? task.assignee_name}
+                          </span>
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <DeadlineLabel deadline={task.deadline} status={task.status} />
+                      </TableCell>
+                      <TableCell>
+                        <UrgencyMark urgency={task.urgency} />
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {dName(task.direction_id)}
+                      </TableCell>
+                      <TableCell>
+                        <StatusSelect
+                          value={task.status}
+                          disabled={update.isPending}
+                          onChange={(status) =>
+                            update.mutate({ id: task.id, status }, { onError: (e) => toast.error(e.message) })
+                          }
+                        />
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
     </>
   );

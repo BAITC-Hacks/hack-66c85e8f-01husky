@@ -20,14 +20,14 @@ export function Field({
 }) {
   return (
     <div className={cn("grid gap-1.5", className)}>
-      <Label htmlFor={htmlFor} className="text-[13px] font-medium text-foreground/80">
+      <Label htmlFor={htmlFor} className="text-foreground/80 text-[13px] font-medium">
         {label}
       </Label>
       {children}
       {error ? (
-        <p className="text-xs text-coral">{error}</p>
+        <p className="text-coral text-xs">{error}</p>
       ) : hint ? (
-        <p className="text-xs text-muted-foreground">{hint}</p>
+        <p className="text-muted-foreground text-xs">{hint}</p>
       ) : null}
     </div>
   );

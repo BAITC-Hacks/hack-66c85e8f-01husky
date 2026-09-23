@@ -42,7 +42,7 @@ export function TasksPanel({
 
   return (
     <div className="grid gap-3">
-      {tasks.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">{t("empty")}</p>}
+      {tasks.length === 0 && <p className="text-muted-foreground py-6 text-center text-sm">{t("empty")}</p>}
       <ol className="grid gap-3">
         {tasks.map((task, i) => (
           <TaskCard

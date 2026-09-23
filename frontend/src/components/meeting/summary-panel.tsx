@@ -14,18 +14,23 @@ export function Markdown({ children }: { children: string }) {
     <div className="text-[15px] leading-relaxed">
       <ReactMarkdown
         components={{
-          h1: (p) => <h3 className="mt-5 mb-2 font-heading text-lg font-semibold first:mt-0" {...p} />,
+          h1: (p) => <h3 className="font-heading mt-5 mb-2 text-lg font-semibold first:mt-0" {...p} />,
           h2: (p) => (
             <h3
-              className="mt-6 mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide text-primary uppercase first:mt-0 after:h-px after:flex-1 after:bg-border"
+              className="text-primary after:bg-border mt-6 mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide uppercase after:h-px after:flex-1 first:mt-0"
               {...p}
             />
           ),
           h3: (p) => <h4 className="mt-4 mb-1 font-semibold" {...p} />,
           p: (p) => <p className="my-2" {...p} />,
-          ul: (p) => <ul className="my-2 list-disc space-y-1 pl-5 marker:text-primary" {...p} />,
-          ol: (p) => <ol className="my-2 list-decimal space-y-1 pl-5 marker:font-mono marker:text-xs marker:text-muted-foreground" {...p} />,
-          strong: (p) => <strong className="font-semibold text-foreground" {...p} />,
+          ul: (p) => <ul className="marker:text-primary my-2 list-disc space-y-1 pl-5" {...p} />,
+          ol: (p) => (
+            <ol
+              className="marker:text-muted-foreground my-2 list-decimal space-y-1 pl-5 marker:font-mono marker:text-xs"
+              {...p}
+            />
+          ),
+          strong: (p) => <strong className="text-foreground font-semibold" {...p} />,
         }}
       >
         {children}
@@ -34,7 +39,15 @@ export function Markdown({ children }: { children: string }) {
   );
 }
 
-export function SummaryPanel({ meetingId, summary, editable }: { meetingId: number; summary: string | null; editable: boolean }) {
+export function SummaryPanel({
+  meetingId,
+  summary,
+  editable,
+}: {
+  meetingId: number;
+  summary: string | null;
+  editable: boolean;
+}) {
   const t = useTranslations("meeting");
   const tc = useTranslations("common");
   const patch = usePatchMeeting(meetingId);
@@ -77,7 +90,7 @@ export function SummaryPanel({ meetingId, summary, editable }: { meetingId: numb
   }
 
   return (
-    <div className="relative rounded-xl border bg-card shadow-soft p-5">
+    <div className="bg-card shadow-soft relative rounded-xl border p-5">
       {editable && (
         <Button
           variant="ghost"
@@ -91,7 +104,11 @@ export function SummaryPanel({ meetingId, summary, editable }: { meetingId: numb
           <Pencil /> {t("editSummary")}
         </Button>
       )}
-      {summary ? <Markdown>{summary}</Markdown> : <p className="text-sm text-muted-foreground">{t("summaryEmpty")}</p>}
+      {summary ? (
+        <Markdown>{summary}</Markdown>
+      ) : (
+        <p className="text-muted-foreground text-sm">{t("summaryEmpty")}</p>
+      )}
     </div>
   );
 }

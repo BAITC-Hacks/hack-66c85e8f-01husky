@@ -45,12 +45,14 @@ export function DatePicker({
           )}
         >
           <CalendarDays className="size-4 opacity-60" />
-          <span className="tabular">{value ? formatDate(value, locale) : (placeholder ?? t("noDeadline"))}</span>
+          <span className="tabular">
+            {value ? formatDate(value, locale) : (placeholder ?? t("noDeadline"))}
+          </span>
           {clearable && value && (
             <span
               role="button"
               tabIndex={-1}
-              className="ml-auto rounded p-0.5 hover:bg-muted"
+              className="hover:bg-muted ml-auto rounded p-0.5"
               onClick={(e) => {
                 e.stopPropagation();
                 onChange(null);

@@ -9,13 +9,7 @@ import { cn } from "@/lib/utils";
 
 const ACCEPT = "audio/*,video/*,.mp3,.wav,.m4a,.ogg,.webm,.mp4,.mkv,.mov";
 
-export function UploadPane({
-  onSubmit,
-  pending,
-}: {
-  onSubmit: (file: File) => void;
-  pending: boolean;
-}) {
+export function UploadPane({ onSubmit, pending }: { onSubmit: (file: File) => void; pending: boolean }) {
   const t = useTranslations("newMeeting.upload");
   const te = useTranslations("newMeeting.errors");
   const [file, setFile] = useState<File | null>(null);
@@ -57,13 +51,16 @@ export function UploadPane({
           onChange={(e) => pick(e.target.files?.[0])}
         />
         {file ? (
-          <div className="flex w-full max-w-md items-center gap-3 rounded-md border bg-card p-3 text-left" onClick={(e) => e.stopPropagation()}>
-            <span className="flex size-10 items-center justify-center rounded-md bg-primary/10 text-primary">
+          <div
+            className="bg-card flex w-full max-w-md items-center gap-3 rounded-md border p-3 text-left"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-md">
               <FileAudio className="size-5" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block truncate font-medium">{file.name}</span>
-              <span className="font-mono text-xs text-muted-foreground">{formatBytes(file.size)}</span>
+              <span className="text-muted-foreground font-mono text-xs">{formatBytes(file.size)}</span>
             </span>
             <Button variant="ghost" size="icon-sm" onClick={() => setFile(null)} aria-label="remove">
               <X />
@@ -71,16 +68,21 @@ export function UploadPane({
           </div>
         ) : (
           <>
-            <UploadCloud className={cn("mb-3 size-10 text-muted-foreground transition-transform group-hover:-translate-y-0.5", drag && "text-primary")} />
+            <UploadCloud
+              className={cn(
+                "text-muted-foreground mb-3 size-10 transition-transform group-hover:-translate-y-0.5",
+                drag && "text-primary",
+              )}
+            />
             <p className="font-heading text-lg">{t("drop")}</p>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="text-muted-foreground mt-1 text-sm">
               {t("or")} <span className="text-primary underline underline-offset-4">{t("browse")}</span>
             </p>
-            <p className="mt-4 font-mono text-[11px] text-muted-foreground">{t("formats")}</p>
+            <p className="text-muted-foreground mt-4 font-mono text-[11px]">{t("formats")}</p>
           </>
         )}
       </div>
-      {error && <p className="text-xs text-coral">{error}</p>}
+      {error && <p className="text-coral text-xs">{error}</p>}
       <Button
         size="lg"
         className="h-11"

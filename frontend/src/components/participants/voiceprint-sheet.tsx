@@ -16,7 +16,13 @@ import { cn } from "@/lib/utils";
 const SECONDS = 10;
 
 /** Participant card with a 10-second voiceprint recording (spec §8.6). */
-export function VoiceprintSheet({ participant, onOpenChange }: { participant: Participant | null; onOpenChange: (o: boolean) => void }) {
+export function VoiceprintSheet({
+  participant,
+  onOpenChange,
+}: {
+  participant: Participant | null;
+  onOpenChange: (o: boolean) => void;
+}) {
   const t = useTranslations("participants");
   const rec = useRecorder({ timeslice: 250 });
   const enroll = useEnrollVoiceprint();
@@ -71,11 +77,15 @@ export function VoiceprintSheet({ participant, onOpenChange }: { participant: Pa
 
         <div className="grid gap-5 p-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold tracking-wide text-primary uppercase">{t("voiceprint")}</span>
+            <span className="text-primary text-xs font-semibold tracking-wide uppercase">
+              {t("voiceprint")}
+            </span>
             <span
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium",
-                participant.has_voiceprint ? "border-mint/40 bg-mint/10 text-mint" : "border-dashed text-muted-foreground",
+                participant.has_voiceprint
+                  ? "border-mint/40 bg-mint/10 text-mint"
+                  : "text-muted-foreground border-dashed",
               )}
             >
               <AudioWaveform className="size-3" />
@@ -83,8 +93,10 @@ export function VoiceprintSheet({ participant, onOpenChange }: { participant: Pa
             </span>
           </div>
 
-          <p className="text-sm text-muted-foreground">{t("recordHint")}</p>
-          <p className="rounded-md border-l-2 border-primary bg-brand-soft/70 px-3 py-2 text-sm italic">{t("sample")}</p>
+          <p className="text-muted-foreground text-sm">{t("recordHint")}</p>
+          <p className="border-primary bg-brand-soft/70 rounded-md border-l-2 px-3 py-2 text-sm italic">
+            {t("sample")}
+          </p>
 
           {/* Countdown ring */}
           <div className="flex flex-col items-center py-4">
@@ -106,26 +118,26 @@ export function VoiceprintSheet({ participant, onOpenChange }: { participant: Pa
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 {enroll.isPending ? (
-                  <Loader2 className="size-8 animate-spin text-primary" />
+                  <Loader2 className="text-primary size-8 animate-spin" />
                 ) : recording ? (
                   <>
-                    <span className="font-mono text-4xl font-light tabular">{left}</span>
-                    <span className="text-xs text-muted-foreground">{t("recording")}</span>
+                    <span className="tabular font-mono text-4xl font-light">{left}</span>
+                    <span className="text-muted-foreground text-xs">{t("recording")}</span>
                   </>
                 ) : rec.state === "denied" ? (
-                  <MicOff className="size-8 text-coral" />
+                  <MicOff className="text-coral size-8" />
                 ) : (
-                  <Mic className="size-8 text-muted-foreground" />
+                  <Mic className="text-muted-foreground size-8" />
                 )}
               </div>
             </div>
             <LevelMeter levels={rec.levels.slice(-32)} active={recording} className="mt-4 h-10 w-56" />
-            {enroll.isPending && <p className="mt-2 text-sm text-muted-foreground">{t("enrolling")}</p>}
+            {enroll.isPending && <p className="text-muted-foreground mt-2 text-sm">{t("enrolling")}</p>}
           </div>
 
           <Button
             size="lg"
-            className={cn("h-11", !recording && "bg-rec text-white hover:bg-rec/90")}
+            className={cn("h-11", !recording && "bg-rec hover:bg-rec/90 text-white")}
             disabled={recording || enroll.isPending}
             onClick={() => rec.start()}
           >

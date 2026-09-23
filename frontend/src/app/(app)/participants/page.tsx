@@ -32,7 +32,7 @@ export default function ParticipantsPage() {
         title={t("title")}
         subtitle={
           <span className="inline-flex items-center gap-1.5">
-            <AudioWaveform className="size-4 text-mint" />
+            <AudioWaveform className="text-mint size-4" />
             {withPrint} / {data.length} · {t("hasVoiceprint")}
           </span>
         }
@@ -49,8 +49,13 @@ export default function ParticipantsPage() {
       />
 
       <div className="relative mb-4 max-w-sm">
-        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tc("search")} className="h-10 pl-9" />
+        <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+        <Input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder={tc("search")}
+          className="h-10 pl-9"
+        />
       </div>
 
       {isLoading ? (
@@ -63,28 +68,32 @@ export default function ParticipantsPage() {
             <li key={p.id}>
               <button
                 onClick={() => setOpenId(p.id)}
-                className="group flex w-full items-center gap-3 rounded-xl border bg-card shadow-soft p-4 text-left transition-all hover:-translate-y-px hover:border-primary/40"
+                className="group bg-card shadow-soft hover:border-primary/40 flex w-full items-center gap-3 rounded-xl border p-4 text-left transition-all hover:-translate-y-px"
               >
                 <ParticipantAvatar name={p.name} className="size-11 text-sm" />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium">{p.name}</span>
-                  <span className="block truncate text-sm text-muted-foreground">{p.position ?? p.email ?? "—"}</span>
+                  <span className="text-muted-foreground block truncate text-sm">
+                    {p.position ?? p.email ?? "—"}
+                  </span>
                   <span className="mt-1.5 flex flex-wrap gap-1.5">
                     <span
                       className={cn(
                         "inline-flex items-center gap-1 rounded-full border px-1.5 py-px text-[11px]",
-                        p.has_voiceprint ? "border-mint/40 bg-mint/10 text-mint" : "border-dashed text-muted-foreground",
+                        p.has_voiceprint
+                          ? "border-mint/40 bg-mint/10 text-mint"
+                          : "text-muted-foreground border-dashed",
                       )}
                     >
                       <AudioWaveform className="size-3" />
                       {p.has_voiceprint ? t("hasVoiceprint") : t("noVoiceprint")}
                     </span>
-                    <span className="rounded-full border px-1.5 py-px font-mono text-[10px] text-muted-foreground uppercase">
+                    <span className="text-muted-foreground rounded-full border px-1.5 py-px font-mono text-[10px] uppercase">
                       {p.user_id ? t("account") : t("guest")}
                     </span>
                   </span>
                 </span>
-                <ChevronRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                <ChevronRight className="text-muted-foreground size-4 transition-transform group-hover:translate-x-0.5" />
               </button>
             </li>
           ))}

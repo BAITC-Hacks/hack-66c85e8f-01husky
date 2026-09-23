@@ -9,6 +9,7 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Field } from "@/components/common/field";
+import { SEGMENT_ON } from "@/components/common/segment";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -47,7 +48,7 @@ export default function RegisterPage() {
   return (
     <>
       <h2 className="font-heading text-3xl font-semibold">{t("registerTitle")}</h2>
-      <p className="mt-1.5 text-sm text-muted-foreground">{t("registerSubtitle")}</p>
+      <p className="text-muted-foreground mt-1.5 text-sm">{t("registerSubtitle")}</p>
       <form onSubmit={onSubmit} className="mt-8 grid gap-4">
         <Field label={t("name")} htmlFor="name" error={errors.name?.message}>
           <Input id="name" autoComplete="name" className="h-10" {...form.register("name")} />
@@ -56,7 +57,13 @@ export default function RegisterPage() {
           <Input id="email" type="email" autoComplete="email" className="h-10" {...form.register("email")} />
         </Field>
         <Field label={t("password")} htmlFor="password" error={errors.password?.message}>
-          <Input id="password" type="password" autoComplete="new-password" className="h-10" {...form.register("password")} />
+          <Input
+            id="password"
+            type="password"
+            autoComplete="new-password"
+            className="h-10"
+            {...form.register("password")}
+          />
         </Field>
         <Field label={t("locale")}>
           <Controller
@@ -68,10 +75,14 @@ export default function RegisterPage() {
                 variant="outline"
                 value={field.value}
                 onValueChange={(v) => v && field.onChange(v)}
-                className="w-full"
+                className={`w-full ${SEGMENT_ON}`}
               >
-                <ToggleGroupItem value="ru" className="flex-1">Русский</ToggleGroupItem>
-                <ToggleGroupItem value="kk" className="flex-1">Қазақша</ToggleGroupItem>
+                <ToggleGroupItem value="ru" className="flex-1">
+                  Русский
+                </ToggleGroupItem>
+                <ToggleGroupItem value="kk" className="flex-1">
+                  Қазақша
+                </ToggleGroupItem>
               </ToggleGroup>
             )}
           />
@@ -82,9 +93,9 @@ export default function RegisterPage() {
           <ArrowRight data-icon="inline-end" />
         </Button>
       </form>
-      <p className="mt-8 text-center text-sm text-muted-foreground">
+      <p className="text-muted-foreground mt-8 text-center text-sm">
         {t("haveAccount")}{" "}
-        <Link href="/login" className="font-medium text-primary underline-offset-4 hover:underline">
+        <Link href="/login" className="text-primary font-medium underline-offset-4 hover:underline">
           {t("login")}
         </Link>
       </p>

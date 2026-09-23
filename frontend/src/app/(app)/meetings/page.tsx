@@ -49,15 +49,17 @@ export default function MeetingsPage() {
         }
       />
 
-      <div className="-mx-4 mb-6 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-        <div className="inline-flex gap-1 rounded-full border bg-card p-1 shadow-soft">
+      <div className="mb-6">
+        <div className="sm:bg-card sm:shadow-soft flex flex-wrap gap-1.5 sm:inline-flex sm:gap-1 sm:rounded-full sm:border sm:p-1">
           {FILTERS.map((f) => (
             <button
               key={f}
               onClick={() => setStatus(f)}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap transition-colors",
-                status === f ? "bg-primary text-primary-foreground shadow-soft" : "text-muted-foreground hover:text-foreground",
+                status === f
+                  ? "bg-primary text-primary-foreground shadow-soft"
+                  : "text-muted-foreground hover:text-foreground max-sm:bg-card max-sm:border",
               )}
             >
               {f === "all" ? tc("all") : tst(f)}

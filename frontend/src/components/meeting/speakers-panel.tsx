@@ -4,7 +4,16 @@ import { AudioWaveform, Bot, Hand, HelpCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { ConfidenceMeter } from "@/components/common/bits";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAssignSpeakers } from "@/lib/api/queries/meetings";
 import type { Participant, Segment, SpeakerMapping, SpeakerSource } from "@/lib/api/types";
 import { formatTimecode, speakerColor } from "@/lib/format";
@@ -47,7 +56,8 @@ export function SpeakersPanel({
 
   const rows = [...speakerMap];
   for (const sp of new Set(segments.map((s) => s.speaker))) {
-    if (!rows.some((r) => r.speaker === sp)) rows.push({ speaker: sp, participant_id: null, source: "none", confidence: 0 });
+    if (!rows.some((r) => r.speaker === sp))
+      rows.push({ speaker: sp, participant_id: null, source: "none", confidence: 0 });
   }
   rows.sort((a, b) => a.speaker.localeCompare(b.speaker));
 
@@ -62,7 +72,13 @@ export function SpeakersPanel({
         const Icon = SOURCE_ICON[r.source];
         const st = stats(r.speaker);
         return (
-          <li key={r.speaker} className={cn("rounded-xl border bg-card shadow-soft p-4", r.source === "none" && "border-coral/40 border-dashed")}>
+          <li
+            key={r.speaker}
+            className={cn(
+              "bg-card shadow-soft rounded-xl border p-4",
+              r.source === "none" && "border-coral/40 border-dashed",
+            )}
+          >
             <div className="flex items-center gap-3">
               <span
                 className="flex size-9 shrink-0 items-center justify-center rounded-full font-mono text-[11px] font-semibold text-white"
@@ -71,17 +87,24 @@ export function SpeakersPanel({
                 {r.speaker.replace(/\D+/g, "")}
               </span>
               <div className="min-w-0 flex-1">
-                <div className="font-mono text-xs text-muted-foreground">{r.speaker}</div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-muted-foreground font-mono text-xs">{r.speaker}</div>
+                <div className="text-muted-foreground text-xs">
                   {t("segments", { count: st.count })} · {formatTimecode(st.time)}
                 </div>
               </div>
-              <span className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium", SOURCE_TONE[r.source])}>
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium",
+                  SOURCE_TONE[r.source],
+                )}
+              >
                 <Icon className="size-3" />
                 {ts(r.source)}
               </span>
             </div>
-            {st.first && <p className="mt-2 line-clamp-1 text-xs text-muted-foreground italic">«{st.first}»</p>}
+            {st.first && (
+              <p className="text-muted-foreground mt-2 line-clamp-1 text-xs italic">«{st.first}»</p>
+            )}
             <div className="mt-3 flex items-center gap-3">
               <Select
                 disabled={readOnly || assign.isPending}
@@ -105,7 +128,7 @@ export function SpeakersPanel({
                     {meetingParticipants.map((p) => (
                       <SelectItem key={p.id} value={String(p.id)}>
                         {p.name}
-                        {p.has_voiceprint && <AudioWaveform className="size-3 text-mint" />}
+                        {p.has_voiceprint && <AudioWaveform className="text-mint size-3" />}
                       </SelectItem>
                     ))}
                   </SelectGroup>

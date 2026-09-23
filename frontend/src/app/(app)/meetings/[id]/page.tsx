@@ -4,7 +4,7 @@ import { AlertOctagon, ArrowLeft, CalendarDays, Clock, RefreshCcw, UsersRound } 
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { PrivacyBadge } from "@/components/brand/privacy-badge";
 import { SealStamp } from "@/components/brand/seal-stamp";
 import { MeetingStatusBadge } from "@/components/common/badges";
@@ -26,6 +26,7 @@ import { useMeeting, useMeetingAction } from "@/lib/api/queries/meetings";
 import { useParticipants } from "@/lib/api/queries/participants";
 import type { Task } from "@/lib/api/types";
 import { formatDate, formatDuration } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 export default function MeetingPage() {
   const { id } = useParams<{ id: string }>();
@@ -54,9 +55,19 @@ export default function MeetingPage() {
     [data?.speaker_map, allParticipants],
   );
 
+  // Below lg the transcript lives in its own tab instead of a side column.
+  const isDesktop = () => window.matchMedia("(min-width: 1024px)").matches;
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const onChange = () => mq.matches && setTab((t) => (t === "transcript" ? "tasks" : t));
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
   const onQuote = (task: Task) => {
     if (task.segment_idx < 0) return;
     setFocus({ idx: task.segment_idx, quote: task.quote, nonce: Date.now() });
+    if (!isDesktop()) setTab("transcript");
   };
   const onTaskClick = (taskId: number) => {
     setTab("tasks");
@@ -82,7 +93,16 @@ export default function MeetingPage() {
     );
   }
   if (error || !data) {
-    return <EmptyState title={error?.message ?? "404"} action={<Button asChild variant="outline"><Link href="/meetings">{t("back")}</Link></Button>} />;
+    return (
+      <EmptyState
+        title={error?.message ?? "404"}
+        action={
+          <Button asChild variant="outline">
+            <Link href="/meetings">{t("back")}</Link>
+          </Button>
+        }
+      />
+    );
   }
 
   const m = data.meeting;
@@ -97,21 +117,26 @@ export default function MeetingPage() {
   return (
     <div className="grid gap-6">
       {/* ---------- Header ---------- */}
-      <header className="relative rounded-2xl border bg-card p-5 shadow-soft sm:p-6">
+      <header className="bg-card shadow-soft relative rounded-2xl border p-5 sm:p-6">
         <Link
           href="/meetings"
-          className="mb-3 inline-flex items-center gap-1 text-xs font-semibold tracking-wide text-primary uppercase hover:text-foreground"
+          className="text-primary hover:text-foreground mb-3 inline-flex items-center gap-1 text-xs font-semibold tracking-wide uppercase"
         >
           <ArrowLeft className="size-3" /> {t("back")} · № {m.id}
         </Link>
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="min-w-0 lg:pr-40">
+        <div
+          className={cn(
+            "flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between",
+            m.status === "confirmed" && "lg:pr-36",
+          )}
+        >
+          <div className="min-w-0">
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <MeetingStatusBadge status={m.status} />
               {m.model_info && <PrivacyBadge modelInfo={m.model_info} />}
             </div>
             <h1 className="font-heading text-3xl font-bold text-balance sm:text-4xl">{m.title}</h1>
-            <dl className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
+            <dl className="text-muted-foreground mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm">
               <div className="inline-flex items-center gap-1.5">
                 <CalendarDays className="size-4" />
                 <dt className="sr-only">{t("date")}</dt>
@@ -155,11 +180,11 @@ export default function MeetingPage() {
       {/* ---------- Processing / failure ---------- */}
       {busy && <PipelineStepper meeting={m} />}
       {m.status === "failed" && (
-        <section className="flex flex-col gap-4 rounded-lg border border-coral/40 bg-coral/5 p-6 sm:flex-row sm:items-center">
-          <AlertOctagon className="size-8 shrink-0 text-coral" />
+        <section className="border-coral/40 bg-coral/5 flex flex-col gap-4 rounded-lg border p-6 sm:flex-row sm:items-center">
+          <AlertOctagon className="text-coral size-8 shrink-0" />
           <div className="flex-1">
             <p className="font-heading text-lg font-semibold">{t("failed")}</p>
-            <p className="font-mono text-sm text-muted-foreground">{m.error}</p>
+            <p className="text-muted-foreground font-mono text-sm">{m.error}</p>
           </div>
           {m.has_audio && (
             <Button variant="outline" onClick={() => reprocess.mutate()} disabled={reprocess.isPending}>
@@ -178,19 +203,22 @@ export default function MeetingPage() {
               duration={m.duration_sec ?? 0}
               nameOf={nameOf}
               activeIdx={focus?.idx ?? null}
-              onSelect={(idx) => setFocus({ idx, nonce: Date.now() })}
+              onSelect={(idx) => {
+                setFocus({ idx, nonce: Date.now() });
+                if (!isDesktop()) setTab("transcript");
+              }}
             />
           )}
 
           <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
-            <section className="overflow-hidden rounded-xl border bg-card shadow-soft lg:sticky lg:top-20">
+            <section className="bg-card shadow-soft hidden overflow-hidden rounded-xl border lg:sticky lg:top-20 lg:block">
               <div className="flex items-baseline justify-between border-b px-4 py-3 sm:px-6">
                 <h2 className="font-heading text-lg font-semibold">{t("transcript")}</h2>
-                <span className="font-mono text-[11px] text-muted-foreground">
+                <span className="text-muted-foreground font-mono text-[11px]">
                   {t("segments", { count: data.segments.length })}
                 </span>
               </div>
-              <div className="max-h-[70vh] overflow-y-auto lg:max-h-[calc(100svh-9rem)]">
+              <div className="max-h-[calc(100svh-9rem)] overflow-y-auto">
                 <Transcript
                   segments={data.segments}
                   tasks={data.tasks}
@@ -203,17 +231,33 @@ export default function MeetingPage() {
             </section>
 
             <Tabs value={tab} onValueChange={setTab} className="gap-4">
-              <TabsList className="grid h-10 w-full grid-cols-3">
+              <TabsList className="grid h-10 w-full grid-cols-4 lg:grid-cols-3 [&>button]:px-1 [&>button]:text-xs sm:[&>button]:text-sm">
+                <TabsTrigger value="transcript" className="lg:hidden">
+                  {t("transcript")}
+                </TabsTrigger>
                 <TabsTrigger value="tasks" className="gap-1.5">
                   {t("tasks")}
                   <span className="font-mono text-[10px] opacity-60">{data.tasks.length}</span>
                 </TabsTrigger>
                 <TabsTrigger value="speakers" className="gap-1.5">
                   {t("speakers")}
-                  {unresolved > 0 && <span className="size-1.5 rounded-full bg-coral" />}
+                  {unresolved > 0 && <span className="bg-coral size-1.5 rounded-full" />}
                 </TabsTrigger>
                 <TabsTrigger value="summary">{t("summary")}</TabsTrigger>
               </TabsList>
+              <TabsContent
+                value="transcript"
+                className="bg-card shadow-soft overflow-hidden rounded-xl border lg:hidden"
+              >
+                <Transcript
+                  segments={data.segments}
+                  tasks={data.tasks}
+                  nameOf={nameOf}
+                  focus={focus}
+                  onFocus={setFocus}
+                  onTaskClick={onTaskClick}
+                />
+              </TabsContent>
               <TabsContent value="tasks">
                 <TasksPanel
                   meetingId={m.id}
@@ -236,7 +280,12 @@ export default function MeetingPage() {
                 />
               </TabsContent>
               <TabsContent value="summary">
-                <SummaryPanel key={data.summary ?? ""} meetingId={m.id} summary={data.summary} editable={isDraft} />
+                <SummaryPanel
+                  key={data.summary ?? ""}
+                  meetingId={m.id}
+                  summary={data.summary}
+                  editable={isDraft}
+                />
               </TabsContent>
             </Tabs>
           </div>

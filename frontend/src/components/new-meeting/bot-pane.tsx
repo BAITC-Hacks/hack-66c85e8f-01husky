@@ -15,7 +15,13 @@ const PLATFORMS: { id: Platform; host: RegExp; mark: string }[] = [
   { id: "teams", host: /teams\.(microsoft|live)\.com/, mark: "T" },
 ];
 
-export function BotPane({ onSubmit, pending }: { onSubmit: (v: { platform: Platform; url: string }) => void; pending: boolean }) {
+export function BotPane({
+  onSubmit,
+  pending,
+}: {
+  onSubmit: (v: { platform: Platform; url: string }) => void;
+  pending: boolean;
+}) {
   const t = useTranslations("newMeeting");
   const tp = useTranslations("platform");
   const [platform, setPlatform] = useState<Platform>("meet");
@@ -52,13 +58,13 @@ export function BotPane({ onSubmit, pending }: { onSubmit: (v: { platform: Platf
               aria-checked={platform === p.id}
               onClick={() => setPlatform(p.id)}
               className={cn(
-                "flex flex-col items-center gap-2 rounded-xl border bg-card shadow-soft px-3 py-4 text-sm transition-all",
-                platform === p.id ? "border-primary ring-2 ring-primary/20" : "hover:border-primary/40",
+                "bg-card shadow-soft flex flex-col items-center gap-2 rounded-xl border px-3 py-4 text-sm transition-all",
+                platform === p.id ? "border-primary ring-primary/20 ring-2" : "hover:border-primary/40",
               )}
             >
               <span
                 className={cn(
-                  "flex size-9 items-center justify-center rounded-md font-heading text-lg font-semibold",
+                  "font-heading flex size-9 items-center justify-center rounded-md text-lg font-semibold",
                   platform === p.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
                 )}
               >
@@ -79,7 +85,9 @@ export function BotPane({ onSubmit, pending }: { onSubmit: (v: { platform: Platf
           aria-invalid={!!error}
         />
       </Field>
-      <p className="rounded-md border border-dashed bg-muted/40 p-3 text-sm text-muted-foreground">{t("bot.hint")}</p>
+      <p className="bg-muted/40 text-muted-foreground rounded-md border border-dashed p-3 text-sm">
+        {t("bot.hint")}
+      </p>
       <Button size="lg" className="h-11" onClick={submit} disabled={pending}>
         {pending ? <Loader2 className="animate-spin" /> : <Bot />}
         {t("bot.submit")}

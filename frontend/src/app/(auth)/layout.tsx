@@ -32,17 +32,25 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
               ))}
             </ul>
             {/* excerpt of a protocol as a teaser */}
-            <figure className="mt-12 rounded-2xl bg-white p-5 text-ink shadow-[0_24px_60px_-20px_rgb(0_0_0/0.5)]">
-              <div className="mb-3 flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="size-2 rounded-full bg-speaker-0" />
+            <figure className="text-ink mt-12 rounded-2xl bg-white p-5 shadow-[0_24px_60px_-20px_rgb(0_0_0/0.5)]">
+              <div className="text-muted-foreground mb-3 flex items-center gap-2 text-xs">
+                <span className="bg-speaker-0 size-2 rounded-full" />
                 <span className="font-mono">01:12</span> · Айгерим Жумабаева
-                <span className="ml-auto rounded-full bg-brand-soft px-2 py-0.5 text-[10px] font-semibold text-primary">KZ</span>
+                <span className="bg-brand-soft text-primary ml-auto rounded-full px-2 py-0.5 text-[10px] font-semibold">
+                  KZ
+                </span>
               </div>
               <blockquote className="text-lg leading-relaxed font-medium">
-                «Айбек, <mark className="marker-highlight rounded bg-transparent px-0.5 text-inherit">техникалық тапсырманы ертеңге дейін дайында</mark>, жедел.»
+                «Айбек,{" "}
+                <mark className="marker-highlight rounded bg-transparent px-0.5 text-inherit">
+                  техникалық тапсырманы ертеңге дейін дайында
+                </mark>
+                , жедел.»
               </blockquote>
-              <figcaption className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                <span className="rounded-full bg-coral/10 px-2 py-0.5 font-semibold text-coral">critical</span>
+              <figcaption className="text-muted-foreground mt-3 flex flex-wrap items-center gap-2 text-xs">
+                <span className="bg-coral/10 text-coral rounded-full px-2 py-0.5 font-semibold">
+                  critical
+                </span>
                 → Айбек Нуров · ИТ
               </figcaption>
             </figure>
@@ -52,13 +60,13 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
       </aside>
 
       {/* Right: form */}
-      <main className="flex flex-col bg-card">
+      <main className="bg-card flex flex-col">
         <div className="flex items-center justify-between p-6">
           <Wordmark className="lg:invisible" />
           <LocaleToggle persist={false} />
         </div>
         <div className="flex flex-1 items-center justify-center px-4 pb-16">
-          <div className="w-full max-w-sm animate-rise">{children}</div>
+          <div className="animate-rise w-full max-w-sm">{children}</div>
         </div>
       </main>
     </div>

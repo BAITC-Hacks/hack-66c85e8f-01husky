@@ -5,7 +5,14 @@ import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Field } from "@/components/common/field";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useCreateParticipant } from "@/lib/api/queries/participants";
 import type { Participant } from "@/lib/api/types";

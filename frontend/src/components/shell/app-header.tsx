@@ -48,7 +48,9 @@ export function AppHeader({ user }: { user: User }) {
         className={cn(
           "relative inline-flex items-center gap-2 text-sm font-medium transition-colors",
           mobile ? "rounded-lg px-3 py-2.5" : "rounded-full px-3.5 py-2",
-          isActive(href) ? "bg-brand-soft text-accent-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+          isActive(href)
+            ? "bg-brand-soft text-accent-foreground"
+            : "text-muted-foreground hover:bg-muted hover:text-foreground",
         )}
       >
         <Icon className="size-4" />
@@ -62,11 +64,11 @@ export function AppHeader({ user }: { user: User }) {
     });
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-card/85 backdrop-blur-md">
+    <header className="bg-card/85 sticky top-0 z-40 border-b backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-4 sm:px-6">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="md:hidden" aria-label="Menu">
+            <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Menu">
               <Menu />
             </Button>
           </SheetTrigger>
@@ -84,7 +86,7 @@ export function AppHeader({ user }: { user: User }) {
         <Link href="/meetings" className="shrink-0">
           <Wordmark />
         </Link>
-        <nav className="hidden items-center gap-1 md:flex">{nav(false)}</nav>
+        <nav className="hidden items-center gap-1 lg:flex">{nav(false)}</nav>
 
         <div className="ml-auto flex items-center gap-1.5">
           <LocaleToggle className="hidden sm:inline-flex" />
@@ -92,15 +94,15 @@ export function AppHeader({ user }: { user: User }) {
           <NotificationBell />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="ml-1 rounded-full ring-offset-2 ring-offset-background focus-visible:ring-2 focus-visible:ring-ring">
+              <button className="ring-offset-background focus-visible:ring-ring ml-1 rounded-full ring-offset-2 focus-visible:ring-2">
                 <ParticipantAvatar name={user.name} />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel className="font-normal">
                 <div className="font-medium">{user.name}</div>
-                <div className="text-xs text-muted-foreground">{user.email}</div>
-                <div className="mt-1 text-[10px] font-semibold tracking-wider text-primary uppercase">
+                <div className="text-muted-foreground text-xs">{user.email}</div>
+                <div className="text-primary mt-1 text-[10px] font-semibold tracking-wider uppercase">
                   {user.role === "admin" ? t("admin") : t("user")}
                 </div>
               </DropdownMenuLabel>

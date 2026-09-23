@@ -11,7 +11,11 @@ export function LocaleToggle({ persist = true, className }: { persist?: boolean;
   return (
     <div
       role="radiogroup"
-      className={cn("inline-flex rounded-full border bg-card p-0.5 text-[11px]", pending && "opacity-60", className)}
+      className={cn(
+        "bg-card inline-flex rounded-full border p-0.5 text-[11px]",
+        pending && "opacity-60",
+        className,
+      )}
     >
       {locales.map((l) => (
         <button
@@ -21,7 +25,9 @@ export function LocaleToggle({ persist = true, className }: { persist?: boolean;
           onClick={() => switchTo(l, persist)}
           className={cn(
             "rounded-full px-2.5 py-1 font-semibold tracking-wide transition-colors",
-            locale === l ? "bg-primary text-primary-foreground shadow-soft" : "text-muted-foreground hover:text-foreground",
+            locale === l
+              ? "bg-primary text-primary-foreground shadow-soft"
+              : "text-muted-foreground hover:text-foreground",
           )}
         >
           {LABEL[l]}
