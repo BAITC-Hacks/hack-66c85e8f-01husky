@@ -104,16 +104,19 @@ def process_meeting(self, meeting_id: int) -> None:
             output_language,
             lambda stage, pct: _set_progress(meeting_id, stage, pct),
         )
-    except Exception as e:  # noqa: BLE001
-        log.error("process_meeting %s failed: %s\n%s", meeting_id, e, traceback.format_exc())
         with SessionLocal() as db:
             m = db.get(Meeting, meeting_id)
-            m.status, m.error = MeetingStatus.failed, f"{type(e).__name__}: {e}"[:2000]
+            if m is None:
+                log.info("process_meeting: meeting %s was deleted", meeting_id)
+                return
+            persist_result(db, m, result)
+            m.status, m.progress_stage, m.progress_pct = MeetingStatus.draft, "done", 100.0
             db.commit()
-        return
-
-    with SessionLocal() as db:
-        m = db.get(Meeting, meeting_id)
-        persist_result(db, m, result)
-        m.status, m.progress_stage, m.progress_pct = MeetingStatus.draft, "done", 100.0
-        db.commit()
+    except Exception as e:  # noqa: BLE001
+        log.error("process_meeting %s failed: %s\n%s", meeting_id, e, traceback.format_exc())
+        # The failed persistence session has closed and rolled back before this write.
+        with SessionLocal() as db:
+            m = db.get(Meeting, meeting_id)
+            if m is not None:
+                m.status, m.error = MeetingStatus.failed, f"{type(e).__name__}: {e}"[:2000]
+                db.commit()
