@@ -58,7 +58,7 @@ Zoom RTMS присылает active-speaker event с timestamp/user_id/user_name
 
 ## Передача команде, 23 сентября 2026
 
-По просьбе Никиты текущий срез передаётся в PR до полной живой приёмки всех платформ. Код синхронизирован с `develop` (`e8f97e7`, merge `8314219`).
+По просьбе Никиты текущий срез передаётся в PR до полной живой приёмки всех платформ. Код синхронизирован с `develop` (`54ea63f`, merge `7d7a781`, включая интеграцию frontend с backend из PR #6).
 
 Локальный `scripts/check.sh` после объединения: backend 96, pipeline 19, bots 79 тестов; Ruff и HTTP smoke прошли. Native WebRTC тесты используют установленный Chrome (`KENES_TEST_BROWSER_CHANNEL=chrome`). Это не подтверждает полный запуск контейнерного стека.
 
