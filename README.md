@@ -98,14 +98,14 @@
 ```bash
 cp .env.example .env
 docker compose up -d --build
-docker compose exec api uv run alembic upgrade head
-docker compose exec api uv run python -m app.seed
 ```
+
+Сервис `api` при старте сам применяет миграции (`alembic upgrade head`) и заполняет справочники и демо-участников (`app.seed`, идемпотентно); `worker` и `beat` ждут его healthcheck.
 
 Дальше:
 
 - API и Swagger: http://localhost:8000/docs
-- Фронтенд: http://localhost:3000 (см. `frontend/README.md`)
+- Фронтенд: http://localhost:3000 → `/ru/meetings` (см. `frontend/README.md`)
 - Учётная запись: `admin@example.com` / `admin123`
 
 По умолчанию `PIPELINE_FAKE=1`: обработка мгновенная, результат детерминированный, ML-модели не нужны. Для реального распознавания:
@@ -157,12 +157,12 @@ cd backend && uv run celery -A app.tasks.celery_app:celery_app beat --loglevel=i
 
 Без Redis и worker'а можно гонять обработку прямо в процессе API: `CELERY_EAGER=1 uv run uvicorn app.main:app`.
 
-Пайплайн отдельно, на тестовой записи:
+Пайплайн отдельно, на любой записи (файл лежит вне репозитория):
 
 ```bash
 cd pipeline
 uv sync --extra ml
-uv run python -m pipeline.cli "../samples/Совещание №1.mp3" --date 2026-09-23 --participants participants.json
+uv run python -m pipeline.cli /path/to/meeting.mp3 --date 2026-09-23 --participants participants.json
 ```
 
 ## Сценарий демо
@@ -182,11 +182,14 @@ uv run python -m pipeline.cli "../samples/Совещание №1.mp3" --date 20
 
 ## Проверка бэкенда через curl
 
-Полный сценарий без фронта, на `PIPELINE_FAKE=1`:
+Полный сценарий без фронта, на `PIPELINE_FAKE=1`. Тот же сценарий автоматизирован в `backend/scripts/smoke_backend.py` (поднимает изолированный uvicorn на отдельной схеме PostgreSQL и прогоняет всё через curl).
 
 ```bash
 API=http://localhost:8000/api/v1
 curl -s $API/health
+
+# тестовое аудио: любой файл или сгенерированный тон
+ffmpeg -y -f lavfi -i "sine=frequency=440:duration=5" -ac 1 -ar 16000 sample.wav
 
 # логин, cookie в файл
 curl -s -c c.txt -X POST $API/auth/login -H 'Content-Type: application/json' \
@@ -196,30 +199,31 @@ curl -s -c c.txt -X POST $API/auth/login -H 'Content-Type: application/json' \
 curl -s -b c.txt $API/participants | python3 -m json.tool | head -30
 curl -s -b c.txt $API/directions
 
-# голосовой эталон участнику 1
-curl -s -b c.txt -X POST $API/participants/1/voiceprint -F "file=@samples/voice.wav"
+# голосовой эталон первому участнику
+PID=$(curl -s -b c.txt $API/participants | python3 -c 'import json,sys; print(json.load(sys.stdin)[0]["id"])')
+curl -s -b c.txt -X POST $API/participants/$PID/voiceprint -F "file=@sample.wav"
 
 # совещание из файла (PIPELINE_FAKE=1 обрабатывает мгновенно, иначе смотрите status/progress_pct)
-curl -s -b c.txt -X POST $API/meetings \
+MID=$(curl -s -b c.txt -X POST $API/meetings \
   -F title="Оперативное совещание" -F meeting_date=2026-09-23 \
-  -F participant_ids=1 -F participant_ids=2 -F participant_ids=3 \
-  -F "file=@samples/Совещание №1.mp3"
-curl -s -b c.txt $API/meetings/1 | python3 -m json.tool
+  -F participant_ids=$PID -F "file=@sample.wav" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')
+curl -s -b c.txt $API/meetings/$MID | python3 -m json.tool
 
 # поправить спикера, подтвердить протокол
-curl -s -b c.txt -X PUT $API/meetings/1/speakers -H 'Content-Type: application/json' \
-  -d '[{"speaker":"SPEAKER_00","participant_id":1}]'
-curl -s -b c.txt -X POST $API/meetings/1/confirm
+curl -s -b c.txt -X PUT $API/meetings/$MID/speakers -H 'Content-Type: application/json' \
+  -d "[{\"speaker\":\"SPEAKER_00\",\"participant_id\":$PID}]"
+curl -s -b c.txt -X POST $API/meetings/$MID/confirm
 
 # экспорт и СЭД
-curl -s -b c.txt "$API/meetings/1/export?format=docx&lang=ru" -o protocol.docx
-curl -s -b c.txt "$API/meetings/1/export?format=pdf&lang=kk" -o protocol.pdf
-curl -s -b c.txt -X POST $API/meetings/1/sed
+curl -s -b c.txt "$API/meetings/$MID/export?format=docx&lang=ru" -o protocol.docx
+curl -s -b c.txt "$API/meetings/$MID/export?format=pdf&lang=kk" -o protocol.pdf
+curl -s -b c.txt -X POST $API/meetings/$MID/sed
 
 # дашборд и статусы
 curl -s -b c.txt "$API/tasks?status=confirmed"
 curl -s -b c.txt $API/tasks/stats
-curl -s -b c.txt -X PATCH $API/tasks/1 -H 'Content-Type: application/json' -d '{"status":"in_progress"}'
+TID=$(curl -s -b c.txt "$API/tasks?meeting_id=$MID" | python3 -c 'import json,sys; print(json.load(sys.stdin)[0]["id"])')
+curl -s -b c.txt -X PATCH $API/tasks/$TID -H 'Content-Type: application/json' -d '{"status":"in_progress"}'
 
 # уведомления
 curl -s -b c.txt $API/notifications
@@ -227,11 +231,11 @@ curl -s -b c.txt $API/notifications/unread-count
 
 # live-запись: создать совещание, дальше браузер шлёт бинарные чанки в ws://localhost:8000/api/v1/meetings/{id}/live
 curl -s -b c.txt -X POST $API/meetings/live -H 'Content-Type: application/json' \
-  -d '{"title":"Live","meeting_date":"2026-09-23","participant_ids":[1,2]}'
+  -d "{\"title\":\"Live\",\"meeting_date\":\"2026-09-23\",\"participant_ids\":[$PID]}"
 
-# бот
+# бот (без пакета bots/ совещание получит статус failed с понятной ошибкой)
 curl -s -b c.txt -X POST $API/meetings/bot -H 'Content-Type: application/json' \
-  -d '{"title":"Meet","meeting_date":"2026-09-23","platform":"meet","url":"https://meet.google.com/abc-defg-hij","participant_ids":[1,2]}'
+  -d "{\"title\":\"Meet\",\"meeting_date\":\"2026-09-23\",\"platform\":\"meet\",\"url\":\"https://meet.google.com/abc-defg-hij\",\"participant_ids\":[$PID]}"
 ```
 
 ## API
@@ -268,11 +272,27 @@ curl -s -b c.txt -X POST $API/meetings/bot -H 'Content-Type: application/json' \
 
 ```bash
 cd pipeline && uv run pytest          # контракт и fake-пайплайн
-cd backend && uv run pytest           # API, Celery-задачи, напоминания, экспорт (нужен Postgres protocol_test)
+cd backend && uv run pytest           # API, Celery-задачи, напоминания, экспорт (нужен Postgres protocol_test, ffmpeg, soffice)
 cd backend && uv run ruff check . && uv run ruff format --check .
+cd backend && uv run python scripts/smoke_backend.py   # end-to-end через реальный HTTP и curl
+cd bots && uv run pytest              # контракт CLI и жизненный цикл бота
+cd frontend && pnpm typecheck && pnpm lint && pnpm build
 ```
 
 Тесты бэкенда используют `PIPELINE_FAKE=1` и `CELERY_EAGER=1`: пайплайн подменяется детерминированной заглушкой, Celery-задачи выполняются в процессе без Redis.
+
+## Статус реализации
+
+Честная карта того, что работает сегодня и что в работе:
+
+| Компонент | Состояние |
+|---|---|
+| Бэкенд: auth, участники, совещания (файл / live / бот), поручения, уведомления, напоминания, экспорт DOCX / PDF, СЭД-mock | готово, покрыто тестами и end-to-end smoke |
+| Контракт пайплайна и `PIPELINE_FAKE` | готово; бэкенд и фронт работают на детерминированной заглушке |
+| Реальный пайплайн (`pipeline/real.py`: whisper, pyannote, voiceprint, LLM-агент, саммари, privacy) | в работе; до его появления `pipeline.cli` без `PIPELINE_FAKE=1` завершается `NotImplementedError` |
+| Фронтенд | каркас, i18n, типизированный API-клиент и логин готовы; экраны совещаний, дашборда и участников в работе |
+| Бот Meet / Zoom / Teams | жизненный цикл, запись, загрузка и CLI-контракт готовы; адаптеры селекторов web-клиентов в работе |
+| Docker Compose | описан и собирается; на машине разработки проверялся локальный запуск без Docker |
 
 ## Структура репозитория
 
