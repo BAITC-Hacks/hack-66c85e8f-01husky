@@ -86,7 +86,7 @@ README.md
 
 ## 5. Контракт pipeline (pydantic, `pipeline/pipeline/models.py`)
 
-Это граница между Ардаком и Эмиром. Backend импортирует эти типы как есть.
+Это граница между Ардаком и Никитой. Backend импортирует эти типы как есть.
 
 ```python
 from datetime import date
@@ -267,11 +267,11 @@ Celery:
 
 Каждый работает только в своей папке. Стык: раздел 5 (pipeline ↔ backend) и раздел 7 (backend ↔ frontend, bots ↔ backend).
 
-### Никита: `frontend/`
+### Эмир: `frontend/`
 Вход: раздел 7 (API) и раздел 8 (экраны). До готовности бэка: `pnpm mock` поднимает msw/json-server с фикстурами из `frontend/mocks/`, повторяющими схемы раздела 7.
 Готово, когда: все 8 экранов работают против реального бэка, сценарий «загрузить файл → увидеть черновик → поправить спикера → подтвердить → скачать PDF → увидеть задачу на дашборде → получить уведомление» проходит без перезагрузки.
 
-### Эмир: `backend/`, `docker-compose.yml`, `.env.example`, `README.md`
+### Никита: `backend/`, `docker-compose.yml`, `.env.example`, `README.md`
 Вход: разделы 6, 7, контракт 5. До готовности пайплайна: `PIPELINE_FAKE=1` → `pipeline.fake.process`.
 Также: `services/export.py` (DOCX-шаблон: шапка организации, название, дата, участники, саммари, таблица поручений, приложение с транскриптом; PDF через LibreOffice), `services/sed/` (интерфейс `SEDClient.push_protocol(meeting, pdf_path) -> sed_ref`, `MockSED` пишет `outbox/<meeting_id>/protocol.pdf + meta.json` и возвращает `SED-2026-000123`), `services/notify.py` (создание notifications), Celery beat, seed-скрипт (admin, 5 участников, направления), README (устройство, запуск в 3 команды, сценарий демо, on-prem раздел, dev-провайдеры).
 Готово, когда: `docker compose up` поднимает всё, `pytest` зелёный, curl-сценарий из README проходит, DOCX/PDF открываются.
