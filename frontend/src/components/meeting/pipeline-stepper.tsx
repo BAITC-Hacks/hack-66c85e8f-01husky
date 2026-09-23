@@ -7,21 +7,32 @@ import { cn } from "@/lib/utils";
 
 const STAGES = ["upload", "stt", "diarize", "voiceprint", "extract", "summary"] as const;
 
+/** Backend progress_stage values that don't have a step of their own. */
+const STAGE_ALIASES: Record<string, (typeof STAGES)[number]> = {
+  queued: "upload",
+  loading_model: "upload",
+  privacy: "summary",
+  done: "summary",
+};
+/** Stages before any audio exists: the meeting is waiting for the bot or the live recording. */
+const WAITING = new Set(["bot_joining", "recording"]);
+
 /** Live view of the pipeline: progress_stage / progress_pct from polling (spec §7 Celery). */
 export function PipelineStepper({ meeting }: { meeting: Meeting }) {
   const t = useTranslations("stages");
   const tm = useTranslations("meeting");
-  const stage = meeting.progress_stage ?? "upload";
-  const botRecording = stage === "bot_recording";
-  const current = botRecording ? -1 : Math.max(0, STAGES.indexOf(stage as (typeof STAGES)[number]));
-  const pct = Math.round((meeting.progress_pct ?? 0) * 100);
+  const raw = meeting.progress_stage ?? "upload";
+  const waiting = WAITING.has(raw);
+  const stage = STAGE_ALIASES[raw] ?? raw;
+  const current = waiting ? -1 : Math.max(0, STAGES.indexOf(stage as (typeof STAGES)[number]));
+  const pct = Math.round(meeting.progress_pct);
 
   return (
     <section className="bg-card shadow-soft overflow-hidden rounded-xl border">
       <div className="flex flex-wrap items-end justify-between gap-4 border-b px-5 py-4 sm:px-6">
         <div>
           <h2 className="font-heading text-xl font-semibold">
-            {botRecording ? t("bot_recording") : tm("processingTitle")}
+            {waiting ? t(raw as "bot_joining" | "recording") : tm("processingTitle")}
           </h2>
           <p className="text-muted-foreground text-sm">{tm("processingHint")}</p>
         </div>

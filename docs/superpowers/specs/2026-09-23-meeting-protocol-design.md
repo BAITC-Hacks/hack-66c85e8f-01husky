@@ -197,12 +197,13 @@ notifications      id, user_id, task_id (nullable), meeting_id (nullable), kind 
 Auth: JWT в httpOnly cookie `access_token`, срок 7 дней. Роли: `user`, `admin`. Любой залогиненный может создать совещание. `admin` видит всё, правит справочники, всех участников. `user` видит совещания, где он создатель или участник, и свои задачи.
 
 ```
-POST   /auth/register        {email, password, name, locale}      → User    (привязывает participant по email)
+POST   /auth/register        {email, password, name, locale}      → User 201 + cookie (привязывает participant по email; 409 если email занят)
 POST   /auth/login           {email, password}                    → User + cookie
 POST   /auth/logout
-GET    /auth/me                                                    → User
+GET    /auth/me                                                    → User {id, email, name, role, locale, participant_id, created_at}
+                                                                   (PATCH /auth/me нет: язык UI хранится только в cookie NEXT_LOCALE)
 
-GET    /participants                                               → [Participant]  (admin: все; user: все, без embedding)
+GET    /participants                                               → [Participant]  (все; без embedding, но с has_voiceprint)
 POST   /participants         {name, email?, position?}             → Participant   (гость)
 PATCH  /participants/{id}
 POST   /participants/{id}/voiceprint   multipart audio             → {ok, embedding_dim}
@@ -214,32 +215,46 @@ POST   /directions  PATCH /directions/{id}                         (admin)
 POST   /meetings             multipart: title, meeting_date, output_language, participant_ids[], file
                                                                    → Meeting {status: uploaded}; ставит celery process_meeting
 POST   /meetings/live        {title, meeting_date, output_language, participant_ids[]}  → Meeting {source: live}
-WS     /meetings/{id}/live   бинарные чанки webm/opus; текстовое сообщение {"event":"stop"} закрывает файл и ставит process_meeting
-POST   /meetings/bot         {title, meeting_date, platform, url, participant_ids[]}    → Meeting {source: bot}; запускает bots.cli
+WS     /meetings/{id}/live   бинарные чанки webm/opus; текстовое сообщение {"event":"stop"} закрывает файл и ставит process_meeting,
+                             ответ {"event":"stopped","bytes":n}. Auth — cookie; чужая/неподходящая встреча → отказ в handshake
+POST   /meetings/bot         {title, meeting_date, output_language, platform, url, participant_ids[]} → Meeting {source: bot,
+                             status: processing, progress_stage: bot_joining}; запускает bots.cli
 POST   /meetings/{id}/audio  multipart file (используется ботом после записи)           → ставит process_meeting
-GET    /meetings             ?status=&from=&to=                    → [MeetingListItem]
-GET    /meetings/{id}                                              → MeetingDetail {meeting, participants, segments, speaker_map, tasks, summary}
-PATCH  /meetings/{id}        {title?, meeting_date?, summary?}
-PUT    /meetings/{id}/speakers  [{speaker, participant_id}]        → пересчёт assignee у задач, source=manual
-POST   /meetings/{id}/reprocess
-POST   /meetings/{id}/confirm                                      → status confirmed, tasks draft→confirmed, notifications assigned+protocol_ready
+GET    /meetings             ?status=&date_from=&date_to=          → [Meeting]
+GET    /meetings/{id}                                              → MeetingDetail (плоский: поля Meeting + summary, language_stats,
+                                                                     model_info, participants, segments, speaker_map, tasks)
+PATCH  /meetings/{id}        {title?, meeting_date?, summary?, output_language?, participant_ids?}  → MeetingDetail
+PUT    /meetings/{id}/speakers  [{speaker, participant_id}]        → MeetingDetail; пересчёт assignee у задач, source=manual
+POST   /meetings/{id}/reprocess                                    → Meeting (409 если аудио удалено, протокол утверждён или уже в обработке)
+POST   /meetings/{id}/confirm                                      → MeetingDetail; status confirmed, tasks draft→confirmed,
+                                                                     notifications assigned+protocol_ready (409 если не draft)
 GET    /meetings/{id}/export ?format=docx|pdf&lang=ru|kk           → файл
-POST   /meetings/{id}/sed                                          → {sed_ref, outbox_path}
+POST   /meetings/{id}/sed                                          → {sed_ref, outbox_path} (409 если не confirmed; 503 без LibreOffice)
 DELETE /meetings/{id}/audio
 DELETE /meetings/{id}
 
-GET    /tasks                ?status=&assignee_id=&direction_id=&urgency=&meeting_id=&mine=1  → [Task]
-GET    /tasks/stats                                                → {draft, confirmed, in_progress, done, overdue, due_soon}
+GET    /tasks                ?status=&assignee_id=&direction_id=&urgency=&meeting_id=&mine=1&include_draft=  → [Task]
+GET    /tasks/stats          ?mine=                                → {draft, confirmed, in_progress, done, overdue, due_soon, total}
 POST   /tasks                {meeting_id, ...}                     (ручное добавление в черновик)
 PATCH  /tasks/{id}           {text?, assignee_participant_id?, deadline?, urgency?, direction_id?, status?}
 DELETE /tasks/{id}
 
-GET    /notifications        ?unread=1                             → [Notification]
-POST   /notifications/{id}/read
-POST   /notifications/read-all
+GET    /notifications        ?unread=1&limit=                      → [Notification]
+GET    /notifications/unread-count                                 → {unread}
+POST   /notifications/{id}/read                                    → Notification
+POST   /notifications/read-all                                     → {unread: 0}
 ```
 
-Ошибки: `{"detail": str}`; 401 без cookie, 403 не своя сущность, 404, 422 валидация.
+Формы ответов (точные схемы — в `/openapi.json`):
+- `Meeting`: `id, title, meeting_date, source, platform, audio_path, duration_sec, output_language, status, progress_stage,
+  progress_pct, error, sed_ref, created_by, created_at, confirmed_at, tasks_count, participants_count`. Аудио есть, если
+  `audio_path != null`. `progress_pct` — от 0 до 100.
+- `progress_stage`: `bot_joining` (бот подключается), `recording` (идёт live-запись), `queued`, `loading_model`, затем стадии
+  pipeline (`stt`, `diarize`, `voiceprint`, `extract`, `summary`, `privacy`), в конце `done`.
+- `Task`: `direction_id`, `quote`, `segment_idx` могут быть `null` (ручная задача); плюс `direction_name`, `meeting_title`, `meeting_date`.
+- `Segment`: `idx, start, end, speaker, text, lang` (без `id`).
+
+Ошибки: `{"detail": str}` (422 валидации FastAPI — список); 401 без cookie, 403 не своя сущность, 404, 409 конфликт состояния/дубликат, 422 валидация, 503 недоступен внешний инструмент.
 OpenAPI: `http://localhost:8000/docs`. Фронт генерирует типы из `/openapi.json` (`pnpm gen:api`).
 
 Celery:

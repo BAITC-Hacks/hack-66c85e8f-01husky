@@ -5,6 +5,7 @@
 import type {
   Direction,
   Meeting,
+  MeetingDetail,
   Notification,
   Participant,
   Segment,
@@ -28,19 +29,26 @@ import {
   TEMPLATE_SUMMARY,
 } from "./seed";
 
-const KEY = "kenes-mock-db-v3";
+const KEY = "kenes-mock-db-v4";
+
+/* Stored rows. Handlers derive the rest (counts, names, titles) the way the backend does. */
+export type UserRow = Omit<User, "participant_id"> & { password: string };
+export type MeetingRow = Omit<Meeting, "tasks_count" | "participants_count"> &
+  Pick<MeetingDetail, "summary" | "language_stats" | "model_info">;
+export type TaskRow = Omit<Task, "direction_name" | "meeting_title" | "meeting_date">;
+export type NotificationRow = Notification & { user_id: number };
 
 export interface DB {
-  users: (User & { password: string })[];
+  users: UserRow[];
   sessionUserId: number | null;
   participants: Participant[];
   directions: Direction[];
-  meetings: Meeting[];
+  meetings: MeetingRow[];
   meetingParticipants: Record<number, number[]>;
   speakerMaps: Record<number, SpeakerMapping[]>;
   segments: Record<number, Segment[]>;
-  tasks: Task[];
-  notifications: Notification[];
+  tasks: TaskRow[];
+  notifications: NotificationRow[];
   /** meeting id → processing start (ms) */
   processing: Record<number, number>;
   seq: number;
@@ -107,17 +115,17 @@ export function tickProcessing() {
     }
     const elapsed = Date.now() - started;
     if (elapsed < 0) {
-      m.status = "uploaded";
-      m.progress_stage = "bot_recording";
+      m.status = "processing";
+      m.progress_stage = "bot_joining";
       m.progress_pct = 0;
     } else if (elapsed < UPLOAD_MS) {
       m.status = "uploaded";
-      m.progress_stage = "upload";
+      m.progress_stage = "queued";
       m.progress_pct = 0;
     } else if (elapsed < TOTAL_MS) {
       const pct = (elapsed - UPLOAD_MS) / (TOTAL_MS - UPLOAD_MS);
       m.status = "processing";
-      m.progress_pct = Math.round(pct * 100) / 100;
+      m.progress_pct = Math.round(pct * 1000) / 10;
       m.progress_stage = STAGES[Math.min(STAGES.length - 1, Math.floor(pct * STAGES.length))];
     } else {
       finalize(m);
@@ -128,18 +136,17 @@ export function tickProcessing() {
   if (changed) save();
 }
 
-function finalize(m: Meeting) {
+function finalize(m: MeetingRow) {
   const pids = db.meetingParticipants[m.id] ?? [];
   const pick = (i: number) => pids[i] ?? null;
   m.status = "draft";
-  m.progress_stage = null;
-  m.progress_pct = 1;
+  m.progress_stage = "done";
+  m.progress_pct = 100;
   m.duration_sec = m.duration_sec ?? 184;
   m.summary = TEMPLATE_SUMMARY;
   m.language_stats = { ru: 0.57, kk: 0.21, mixed: 0.22 };
   m.model_info = MODEL_INFO;
-  db.segments[m.id] = buildSegments(nextId());
-  db.seq += 100;
+  db.segments[m.id] = buildSegments();
   db.speakerMaps[m.id] = [
     { speaker: "SPEAKER_00", participant_id: pick(0), source: pick(0) ? "voiceprint" : "none", confidence: pick(0) ? 0.9 : 0 },
     { speaker: "SPEAKER_01", participant_id: pick(1), source: pick(1) ? "llm" : "none", confidence: pick(1) ? 0.72 : 0 },
@@ -159,10 +166,10 @@ function finalize(m: Meeting) {
   });
 }
 
-export function startProcessing(m: Meeting) {
+export function startProcessing(m: MeetingRow) {
   db.processing[m.id] = Date.now();
   m.status = "uploaded";
-  m.progress_stage = "upload";
+  m.progress_stage = null;
   m.progress_pct = 0;
   m.error = null;
 }
@@ -190,7 +197,7 @@ export function refreshOverdue() {
   }
 }
 
-export function isDueSoon(t: Task) {
+export function isDueSoon(t: TaskRow) {
   if (!t.deadline || !(t.status === "confirmed" || t.status === "in_progress")) return false;
   const diff = new Date(t.deadline).getTime() - new Date(today()).getTime();
   return diff >= 0 && diff <= 86_400_000;

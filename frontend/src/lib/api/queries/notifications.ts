@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../client";
-import type { Notification } from "../types";
+import type { Notification, UnreadCount } from "../types";
 import { qk } from "./keys";
 
 /** Bell polling every 30 s (spec §8.8). */
@@ -17,7 +17,7 @@ export function useNotifications() {
 export function useReadNotification() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => api.post<void>(`/notifications/${id}/read`),
+    mutationFn: (id: number) => api.post<Notification>(`/notifications/${id}/read`),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.notifications }),
   });
 }
@@ -25,7 +25,7 @@ export function useReadNotification() {
 export function useReadAllNotifications() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => api.post<void>("/notifications/read-all"),
+    mutationFn: () => api.post<UnreadCount>("/notifications/read-all"),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.notifications }),
   });
 }
