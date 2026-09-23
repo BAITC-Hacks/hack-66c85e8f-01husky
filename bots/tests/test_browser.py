@@ -69,7 +69,7 @@ def test_prejoin_lobby_admission_and_end(chromium, tmp_path, cls, platform, fiel
     ("html", "reason"),
     [
         ("<p>The host denied your request</p>", "denied guest access"),
-        ("<p>You can't join this video call</p>", "denied guest access"),
+        ("<p>You can't join this video call</p>", "provider refused access"),
         (
             "<p>Zoom needs to review the security of your connection before proceeding.</p>",
             "CAPTCHA",

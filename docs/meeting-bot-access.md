@@ -70,3 +70,32 @@ Zoom RTMS присылает active-speaker event с timestamp/user_id/user_name
 | BOT5, агент B | Согласовать контракт временной шкалы, происхождение и погрешность наблюдений; затем реализовать передачу подсказок о спикерах |
 
 Открыто: слышимая запись реальной встречи → callback → draft; сборка и запуск bot-runtime; гостевой вход Meet; Zoom RTMS; активные спикеры. Телемост остаётся опциональным. При передаче владения файлами согласовать это с агентом B.
+
+## Диагностика Meet после PR #8
+
+PR #8 влит в develop. Следующий срез исправляет вход на страницу prejoin, но не заявляет успешное подключение.
+
+На одной тестовой встрече и одном Chrome проверено:
+
+| Вариант | Результат |
+|---|---|
+| Исходный Playwright launch | `ResolveMeetingSpace` возвращает HTTP 403 до формы имени |
+| Без request/WebSocket guard | Тот же отказ |
+| Без guard и media init script | Тот же отказ |
+| С восстановленными component extensions | Тот же отказ |
+| Только исключён `--enable-automation` | Тот же отказ; `navigator.webdriver` остаётся true |
+| Meet с `--disable-blink-features=AutomationControlled` | `ResolveMeetingSpace` 200, поле имени доступно; после заявки `CreateMeetingDevice` 403 |
+| Отдельно запущенный Chrome с чистым профилем и CDP | Форма имени доступна; после заявки тот же отказ |
+
+В production добавлен один параметр только для Meet. Sandbox, ограничения сетевых адресов, гостевой профиль, имя Kenes AI и допуск организатора сохранены. Это исправление первого этапа; оно не гарантирует вход во встречу. Общий отказ `can't join` теперь не приписывается организатору без доказательства.
+
+На присланном организатором скриншоте выбран Trusted и включено разрешение запросить вход. Экран также сообщает, что настройки относятся к будущим запускам. Для следующего контрольного прогона запрошена новая встреча или перезапуск текущей. Публичные документы не позволяют установить причину второго 403 по одному коду.
+
+### Какие решения используют другие
+
+- Google описывает вход без аккаунта через имя и запрос организатору. Отключение knocking автоматически отклоняет анонимов. [Вход](https://support.google.com/meet/answer/9303069?co=GENIE.Platform%3DDesktop&hl=en), [настройки доступа](https://support.google.com/a/users/answer/11989526?hl=en).
+- Recall сохраняет гостевой режим для разрешающих его встреч. Для закрытых встреч предлагает отдельный платный Workspace с SSO; имя берётся из аккаунта. [Guest FAQ](https://docs.recall.ai/docs/google-meet-faq), [signed-in setup](https://docs.recall.ai/docs/google-meet-login-getting-started).
+- Attendee также использует отдельный Workspace и SAML SSO для signed-in Meet, поддерживает self-hosted адрес IdP. Это отдельный путь интеграции, требующий настройки аккаунта. [Инструкция](https://docs.attendee.dev/guides/signedinbots).
+- В открытом коде Attendee и Vexa есть headed launch и изменения automation flags; оба также меняют другие свойства браузера. Их код сам по себе не доказывает причину нашего отказа. [Attendee](https://github.com/attendee-labs/attendee/blob/0b0d6973b7182f764a15f8c9c45c5c48bb0dcae5/bots/web_bot_adapter/web_bot_adapter.py#L756-L797), [Vexa](https://github.com/Vexa-ai/vexa/blob/dba990b413bd0f888b02d46a24f802db492addbb/core/meetings/modules/remote-browser/src/browser.ts#L35-L46).
+
+Выбор для текущего этапа: довести гостевой вход на контрольной встрече. Если её доступ требует аккаунт, отдельно согласовать выделенную учётную запись Kenes AI. Meet Media API пока не подходит для произвольных встреч из-за требований Developer Preview к участникам.
