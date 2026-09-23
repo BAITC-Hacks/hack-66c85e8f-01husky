@@ -1,0 +1,58 @@
+from functools import lru_cache
+from pathlib import Path
+
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+BACKEND_DIR = Path(__file__).resolve().parent.parent
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=(BACKEND_DIR.parent / ".env", BACKEND_DIR / ".env"), extra="ignore"
+    )
+
+    app_name: str = "Meeting Protocol API"
+    organization_name: str = ""
+    debug: bool = False
+    secret_key: str = "change-me-in-env"
+    access_token_days: int = 7
+    cookie_secure: bool = False
+
+    database_url: str = "postgresql+psycopg://protocol:protocol@localhost:5432/protocol"
+    redis_url: str = "redis://localhost:6379/0"
+
+    data_dir: Path = BACKEND_DIR / "data"
+    outbox_dir: Path = BACKEND_DIR / "outbox"
+
+    pipeline_fake: bool = False
+    stt_backend: str = "local"
+    llm_provider: str = "ollama"
+    llm_model: str = "qwen3:14b"
+    ollama_url: str = "http://localhost:11434"
+    hf_token: str | None = None
+    nvidia_api_key: str | None = None
+    openai_api_key: str | None = None
+
+    due_soon_hours: int = 24
+
+    # Bot callback credentials are scoped JWTs, minted per meeting by the worker.
+    public_api_url: str = "http://localhost:8000/api/v1"
+    bot_timeout_sec: int = Field(default=3 * 3600, ge=60)
+    bot_lobby_timeout_sec: int = Field(default=600, ge=1)
+    bot_upload_timeout_sec: int = Field(default=120, ge=1)
+    bot_max_recording_sec: int = Field(default=2 * 3600, ge=1)
+    bot_audio_device: str = "pulse:kenes.monitor"
+    cors_origins: list[str] = ["http://localhost:3000"]
+
+    @property
+    def audio_dir(self) -> Path:
+        return self.data_dir / "audio"
+
+
+@lru_cache
+def get_settings() -> Settings:
+    s = Settings()
+    s.audio_dir.mkdir(parents=True, exist_ok=True)
+    s.outbox_dir.mkdir(parents=True, exist_ok=True)
+    return s

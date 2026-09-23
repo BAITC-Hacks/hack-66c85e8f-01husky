@@ -1,4 +1,6 @@
-# Система автопротоколирования совещаний с фиксацией поручений: design spec
+# Kenes AI: система автопротоколирования совещаний
+
+Рабочее название проекта: **Kenes AI**.
 
 Дата: 2026-09-23. Статус: approved, ready for implementation.
 Репозиторий: https://github.com/BAITC-Hacks/hack-66c85e8f-01husky
@@ -25,7 +27,7 @@
 Кейс запрещает передачу аудио/текста во внешние облачные API. Решение:
 
 - Каждый ИИ-компонент за интерфейсом провайдера. **Значения по умолчанию в `.env.example` и `docker-compose.yml`: локальные** (`STT_BACKEND=local`, `LLM_PROVIDER=ollama`).
-- Облачные провайдеры (`openai`, `nvidia`) существуют как dev/ускорение демо и помечены в README как «dev-only, в закрытом контуре заменяются на local/ollama/nvidia_nim без изменения кода».
+- Передача аудио и текста во внешние API запрещена также при разработке и демо. Только локальные/self-hosted модели; скачивание весов — отдельный подготовительный шаг без аудио/текста.
 - Аудио хранится только в `backend/data/audio/`. Есть операция «удалить аудио после протокола».
 - В транскрипте перед сохранением маскируются телефоны и ИИН (`pipeline/privacy.py`).
 - Никакой телеметрии, аналитики, внешних CDN в проде-профиле compose.
@@ -38,7 +40,7 @@
 | backend/ | Python 3.12, FastAPI, SQLAlchemy 2 + Alembic, PostgreSQL 16, Celery 5 + Redis, uv |
 | pipeline/ | Python 3.12 библиотека, pydantic v2, faster-whisper, pyannote.audio 3.1, speechbrain (ECAPA), httpx; uv |
 | bots/ | Python 3.12, Playwright (Chromium), ffmpeg; uv |
-| infra | docker-compose: `frontend`, `api`, `worker`, `beat`, `postgres`, `redis`, `ollama` |
+| infra | docker-compose: `frontend`, `api`, `worker`, `bot-worker`, `beat`, `postgres`, `redis`, `ollama` |
 | экспорт | python-docx → DOCX; PDF через LibreOffice headless (`soffice --convert-to pdf`) |
 
 ## 4. Структура репозитория
@@ -63,10 +65,10 @@ pipeline/
   pipeline/
     __init__.py      process(), enroll_voice()
     models.py        контракт (раздел 5), единственный источник типов
-    stt/             base.py, local_whisper.py, openai_whisper.py, nvidia_asr.py
+    stt/             local_whisper.py (локальные веса, offline)
     diarize.py       pyannote
     voiceprint.py    ECAPA embeddings, cosine match, enroll
-    llm/             base.py, ollama.py, nvidia_nim.py, openai.py
+    llm/             base.py, ollama.py (локальный/self-hosted)
     extract.py       агент извлечения поручений
     summary.py
     privacy.py
@@ -77,7 +79,7 @@ bots/
   bots/
     base.py          MeetingBot: join(url) → record → leave → upload
     meet.py, zoom.py, teams.py   адаптеры селекторов
-    cli.py           python -m bots.cli --platform meet --url ... --meeting-id ...
+    cli.py           python -m bots.cli --platform meet --meeting-id ... (URL/token через env)
 docs/superpowers/specs/   этот файл
 docker-compose.yml
 .env.example
@@ -86,7 +88,7 @@ README.md
 
 ## 5. Контракт pipeline (pydantic, `pipeline/pipeline/models.py`)
 
-Это граница между Ардаком и Никитой. Backend импортирует эти типы как есть.
+Это граница pipeline и backend, оба модуля теперь ведёт Ардак. Backend импортирует эти типы как есть.
 
 ```python
 from datetime import date
@@ -114,6 +116,7 @@ class SpeakerMapping(BaseModel):
     participant_id: int | None
     source: SpeakerSource
     confidence: float                   # 0..1
+    participant_name: str | None = None  # подтверждённое цитатой имя гостя для backend
 
 class Task(BaseModel):
     text: str                           # суть поручения, одна фраза, императив
@@ -151,7 +154,8 @@ def enroll_voice(audio_path: str) -> list[float]: ...      # эталон тем
 Правила:
 - `process()` синхронная, без сети кроме провайдеров, без БД, без FastAPI.
 - Все модели (whisper, pyannote, ECAPA) грузятся лениво и кешируются в процессе.
-- Провайдеры выбираются из env: `STT_BACKEND=local|openai|nvidia`, `LLM_PROVIDER=ollama|nvidia_nim|openai`, `LLM_MODEL`, `OLLAMA_URL`, `NVIDIA_API_KEY`, `OPENAI_API_KEY`, `HF_TOKEN`.
+- Конфигурация: `STT_BACKEND=local`, `STT_MODEL`, `STT_MODEL_DIR`, `STT_LANGUAGE=auto|ru|kk`, `LLM_PROVIDER=ollama`, `LLM_MODEL`, `OLLAMA_URL` (локальный адрес). `HF_TOKEN` используется только при подготовке gated-весов, не для обработки записи.
+- Этап STT + диаризация сохраняет контракт: локальные pyannote segmentation 3.0 и NeMo TitaNet-large через sherpa-onnx дают группы `speaker1`, `speaker2`, … по первому появлению в конкретной встрече. Первичная карта содержит `participant_id=null`, `source=none`, `confidence=0` (уверенность именно в личности, не качестве кластера). Имена из списка участников сами по себе не доказывают соответствие голосу. Локальная Qwen3:8b извлекает поручения/summary и может заполнить `source=llm` по проверяемому самопредставлению или передаче слова; voiceprint-enrollment ещё не реализован. Язык сегмента пока `other`; `draft` требует проверки и подтверждения секретарём.
 - `pipeline.fake.process()` имеет ту же сигнатуру и возвращает правдоподобный результат с 3 спикерами и 4 поручениями. Backend использует его при `PIPELINE_FAKE=1`.
 
 ### 5.1 Агент извлечения поручений (`extract.py`)
@@ -166,6 +170,23 @@ def enroll_voice(audio_path: str) -> list[float]: ...      # эталон тем
 ### 5.2 Привязка спикеров (`voiceprint.py` + `extract.py`)
 
 Приоритет: voiceprint (если у участника есть `voice_embedding` и cosine ≥ 0.75) → LLM по контексту обращений («Айбек, ты подготовь…» значит следующий говорящий, скорее всего, Айбек; самопредставления) → `none`. Секретарь правит вручную в UI, backend пересчитывает `assignee_participant_id` у задач без повторного прогона пайплайна.
+
+Уточнение текущей реализации: автоматическое контекстное сопоставление требует явной
+передачи слова («Начнём с …», «… вам слово», «доложите»), ближайшего содержательного
+ответа другого голоса и однозначного совпадения имени с участником. Обычное поручение
+«Айбек, ты подготовь…» **недостаточно** для вывода о личности следующего говорящего.
+Противоречащие привязки одного кластера отклоняются. Источник `llm`, confidence 0,75 —
+эвристическая отметка, а не калиброванная вероятность. Настоящие voiceprint-эталоны
+остаются отдельным будущим этапом. Типовой срок «до конца недели» в реальном пайплайне
+трактуется как ближайшая пятница; исходная формулировка сохраняется для проверки.
+
+По выбору пользователя неизвестные явно названные люди автоматически создаются
+backend как гости (без email/user_id), добавляются к участникам встречи и связываются
+с поручениями/спикерами. `SpeakerMapping.participant_name` — опциональное расширение
+внутреннего контракта для имени из проверенной передачи слова/самопредставления.
+Существующие однозначные совпадения переиспользуются; неоднозначность не создаёт
+третьего гостя. Роли/местоимения/метки speakerN не являются именами гостей.
+REST API остаётся прежним: клиент получает participant_id и обычного участника.
 
 ## 6. Домен и БД (backend, Alembic)
 
@@ -194,12 +215,13 @@ notifications      id, user_id, task_id (nullable), meeting_id (nullable), kind 
 Auth: JWT в httpOnly cookie `access_token`, срок 7 дней. Роли: `user`, `admin`. Любой залогиненный может создать совещание. `admin` видит всё, правит справочники, всех участников. `user` видит совещания, где он создатель или участник, и свои задачи.
 
 ```
-POST   /auth/register        {email, password, name, locale}      → User    (привязывает participant по email)
+POST   /auth/register        {email, password, name, locale}      → User 201 + cookie (привязывает participant по email; 409 если email занят)
 POST   /auth/login           {email, password}                    → User + cookie
 POST   /auth/logout
-GET    /auth/me                                                    → User
+GET    /auth/me                                                    → User {id, email, name, role, locale, participant_id, created_at}
+                                                                   (PATCH /auth/me нет: язык UI хранится только в cookie NEXT_LOCALE)
 
-GET    /participants                                               → [Participant]  (admin: все; user: все, без embedding)
+GET    /participants                                               → [Participant]  (все; без embedding, но с has_voiceprint)
 POST   /participants         {name, email?, position?}             → Participant   (гость)
 PATCH  /participants/{id}
 POST   /participants/{id}/voiceprint   multipart audio             → {ok, embedding_dim}
@@ -211,38 +233,52 @@ POST   /directions  PATCH /directions/{id}                         (admin)
 POST   /meetings             multipart: title, meeting_date, output_language, participant_ids[], file
                                                                    → Meeting {status: uploaded}; ставит celery process_meeting
 POST   /meetings/live        {title, meeting_date, output_language, participant_ids[]}  → Meeting {source: live}
-WS     /meetings/{id}/live   бинарные чанки webm/opus; текстовое сообщение {"event":"stop"} закрывает файл и ставит process_meeting
-POST   /meetings/bot         {title, meeting_date, platform, url, participant_ids[]}    → Meeting {source: bot}; запускает bots.cli
+WS     /meetings/{id}/live   бинарные чанки webm/opus; текстовое сообщение {"event":"stop"} закрывает файл и ставит process_meeting,
+                             ответ {"event":"stopped","bytes":n}. Auth — cookie; чужая/неподходящая встреча → отказ в handshake
+POST   /meetings/bot         {title, meeting_date, output_language, platform, url, participant_ids[]} → Meeting {source: bot,
+                             status: processing, progress_stage: bot_joining}; запускает bots.cli
 POST   /meetings/{id}/audio  multipart file (используется ботом после записи)           → ставит process_meeting
-GET    /meetings             ?status=&from=&to=                    → [MeetingListItem]
-GET    /meetings/{id}                                              → MeetingDetail {meeting, participants, segments, speaker_map, tasks, summary}
-PATCH  /meetings/{id}        {title?, meeting_date?, summary?}
-PUT    /meetings/{id}/speakers  [{speaker, participant_id}]        → пересчёт assignee у задач, source=manual
-POST   /meetings/{id}/reprocess
-POST   /meetings/{id}/confirm                                      → status confirmed, tasks draft→confirmed, notifications assigned+protocol_ready
+GET    /meetings             ?status=&date_from=&date_to=          → [Meeting]
+GET    /meetings/{id}                                              → MeetingDetail (плоский: поля Meeting + summary, language_stats,
+                                                                     model_info, participants, segments, speaker_map, tasks)
+PATCH  /meetings/{id}        {title?, meeting_date?, summary?, output_language?, participant_ids?}  → MeetingDetail
+PUT    /meetings/{id}/speakers  [{speaker, participant_id}]        → MeetingDetail; пересчёт assignee у задач, source=manual
+POST   /meetings/{id}/reprocess                                    → Meeting (409 если аудио удалено, протокол утверждён или уже в обработке)
+POST   /meetings/{id}/confirm                                      → MeetingDetail; status confirmed, tasks draft→confirmed,
+                                                                     notifications assigned+protocol_ready (409 если не draft)
 GET    /meetings/{id}/export ?format=docx|pdf&lang=ru|kk           → файл
-POST   /meetings/{id}/sed                                          → {sed_ref, outbox_path}
+POST   /meetings/{id}/sed                                          → {sed_ref, outbox_path} (409 если не confirmed; 503 без LibreOffice)
 DELETE /meetings/{id}/audio
 DELETE /meetings/{id}
 
-GET    /tasks                ?status=&assignee_id=&direction_id=&urgency=&meeting_id=&mine=1  → [Task]
-GET    /tasks/stats                                                → {draft, confirmed, in_progress, done, overdue, due_soon}
+GET    /tasks                ?status=&assignee_id=&direction_id=&urgency=&meeting_id=&mine=1&include_draft=  → [Task]
+GET    /tasks/stats          ?mine=                                → {draft, confirmed, in_progress, done, overdue, due_soon, total}
 POST   /tasks                {meeting_id, ...}                     (ручное добавление в черновик)
 PATCH  /tasks/{id}           {text?, assignee_participant_id?, deadline?, urgency?, direction_id?, status?}
 DELETE /tasks/{id}
 
-GET    /notifications        ?unread=1                             → [Notification]
-POST   /notifications/{id}/read
-POST   /notifications/read-all
+GET    /notifications        ?unread=1&limit=                      → [Notification]
+GET    /notifications/unread-count                                 → {unread}
+POST   /notifications/{id}/read                                    → Notification
+POST   /notifications/read-all                                     → {unread: 0}
 ```
 
-Ошибки: `{"detail": str}`; 401 без cookie, 403 не своя сущность, 404, 422 валидация.
+Формы ответов (точные схемы — в `/openapi.json`):
+- `Meeting`: `id, title, meeting_date, source, platform, audio_path, duration_sec, output_language, status, progress_stage,
+  progress_pct, error, sed_ref, created_by, created_at, confirmed_at, tasks_count, participants_count`. Аудио есть, если
+  `audio_path != null`. `progress_pct` — от 0 до 100.
+- `progress_stage`: `bot_joining` (бот подключается), `recording` (идёт live-запись), `queued`, `loading_model`, затем стадии
+  pipeline (`stt`, `diarize`, `voiceprint`, `extract`, `summary`, `privacy`), в конце `done`.
+- `Task`: `direction_id`, `quote`, `segment_idx` могут быть `null` (ручная задача); плюс `direction_name`, `meeting_title`, `meeting_date`.
+- `Segment`: `idx, start, end, speaker, text, lang` (без `id`).
+
+Ошибки: `{"detail": str}` (422 валидации FastAPI — список); 401 без cookie, 403 не своя сущность, 404, 409 конфликт состояния/дубликат, 422 валидация, 503 недоступен внешний инструмент.
 OpenAPI: `http://localhost:8000/docs`. Фронт генерирует типы из `/openapi.json` (`pnpm gen:api`).
 
 Celery:
 - `process_meeting(meeting_id)`: status→processing, `pipeline.process(...)` с progress-колбэком в `meetings.progress_*`, запись segments/speaker_map/tasks/summary, status→draft; при исключении status→failed + error.
 - `check_deadlines()` (beat, каждый час): `due_soon` за 24 ч до срока (одно уведомление на задачу), `overdue` при просрочке + смена статуса.
-- `run_bot(meeting_id, platform, url)`: subprocess `python -m bots.cli ...`.
+- `run_bot(meeting_id)`: выделенная очередь `bots`, subprocess `python -m bots.cli ...`. Worker читает platform/url из БД; URL и временный upload token передаёт через env. Callback проверяет audience, meeting_id, срок токена, source=bot и стадию ожидания аудио. Повторная загрузка отклоняется.
 
 ## 8. Frontend: экраны
 
@@ -267,23 +303,27 @@ Celery:
 
 Каждый работает только в своей папке. Стык: раздел 5 (pipeline ↔ backend) и раздел 7 (backend ↔ frontend, bots ↔ backend).
 
-### Эмир: `frontend/`
+### Эмир: `frontend/` (полностью сам: каркас, типы из `/openapi.json`, Dockerfile, сервис в compose)
 Вход: раздел 7 (API) и раздел 8 (экраны). До готовности бэка: `pnpm mock` поднимает msw/json-server с фикстурами из `frontend/mocks/`, повторяющими схемы раздела 7.
 Готово, когда: все 8 экранов работают против реального бэка, сценарий «загрузить файл → увидеть черновик → поправить спикера → подтвердить → скачать PDF → увидеть задачу на дашборде → получить уведомление» проходит без перезагрузки.
 
-### Никита: `backend/`, `docker-compose.yml`, `.env.example`, `README.md`
+### Ардак (ранее Никита): `backend/`, `docker-compose.yml`, `.env.example`, `README.md`
 Вход: разделы 6, 7, контракт 5. До готовности пайплайна: `PIPELINE_FAKE=1` → `pipeline.fake.process`.
-Также: `services/export.py` (DOCX-шаблон: шапка организации, название, дата, участники, саммари, таблица поручений, приложение с транскриптом; PDF через LibreOffice), `services/sed/` (интерфейс `SEDClient.push_protocol(meeting, pdf_path) -> sed_ref`, `MockSED` пишет `outbox/<meeting_id>/protocol.pdf + meta.json` и возвращает `SED-2026-000123`), `services/notify.py` (создание notifications), Celery beat, seed-скрипт (admin, 5 участников, направления), README (устройство, запуск в 3 команды, сценарий демо, on-prem раздел, dev-провайдеры).
+Также: `services/export.py` (DOCX-шаблон: шапка организации, название, дата, участники, саммари, таблица поручений, приложение с транскриптом; PDF через LibreOffice), `services/sed/` (интерфейс `SEDClient.push_protocol(meeting, pdf_path) -> sed_ref`, `MockSED` пишет `outbox/<meeting_id>/protocol.pdf + meta.json` и возвращает `SED-2026-000123`), `services/notify.py` (создание notifications), Celery beat, seed-скрипт (admin, 5 участников, направления), README (устройство, проверенный запуск, сценарий демо, on-prem раздел, подготовка локальных моделей).
 Готово, когда: `docker compose up` поднимает всё, `pytest` зелёный, curl-сценарий из README проходит, DOCX/PDF открываются.
 
-### Ардак: `pipeline/`, `bots/`
+### Ардак: `pipeline/`
 Вход: раздел 5. Первое действие: прогнать реальную тестовую запись через `python -m pipeline.cli`, сравнить `language=None` vs `language=ru` для шала-казахского, зафиксировать выбор в `pipeline/README.md`.
-Порядок: stt local → diarize → cli печатает MeetingResult → extract агент → summary → voiceprint + enroll → privacy → провайдеры openai/nvidia → bots (meet первым, zoom/teams адаптерами).
-Бот: Playwright Chromium с фейковым аудио-устройством, заходит по ссылке как «Протокол-бот», ждёт допуска, пишет аудио вкладки через `--use-fake-ui-for-media-stream` + ffmpeg/pulse (Linux в docker) или screen-capture API, по окончании `POST /meetings/{id}/audio`.
-Готово, когда: cli на реальной записи даёт верных спикеров, поручения с верными датами и ответственными; `pytest` на `fake` и на unit-нормализации дат зелёный; бот записывает 1 минуту Meet и загружает файл.
+Порядок: локальные PostgreSQL/Redis → stt local + privacy → API/Celery/MeetingResult → diarize → локальный extract → summary → voiceprint + enroll. Никаких облачных провайдеров. Готово, когда реальная запись даёт проверяемые спикеры, поручения, даты и саммари, результат сохраняется и экспортируется backend.
+
+### Агент B / Никита: `bots/` и bot runtime
+
+По решению Никиты обязательны Meet, Zoom и Teams; Телемост опционален. Гость с видимым именем Kenes AI, организатор допускает из lobby. По запросу Никиты виртуальная камера показывает статичный логотип из develop, микрофон получает только нулевые аудиосэмплы. Отдельный bot-worker с concurrency=1 и PulseAudio sink. Backend выдаёт временный токен только на загрузку записи этой встречи.
+
+Готово, когда для каждой из трёх платформ бот принят во встречу, записал минимум минуту слышимой тестовой речи, вышел, загрузил WAV и meeting дошёл до draft. Локальные HTML fixtures не заменяют эту приёмку.
 
 ### Camille (агент): каркас
-Скаффолд репо: структура папок, `pipeline/models.py` с контрактом, `pipeline/fake.py`, `backend` с моделями и Alembic-миграцией 0001, пустые роутеры со схемами, `frontend` с Next.js + Tailwind + next-intl + типами API, `docker-compose.yml`, `.env.example`, README-заготовка. После скаффолда: интеграция стыков, README, ревью.
+Скаффолд репо: структура папок, `pipeline/models.py` с контрактом, `pipeline/fake.py`, `backend` с моделями и Alembic-миграцией 0001, пустые роутеры со схемами, `docker-compose.yml`, `.env.example`, README-заготовка. После скаффолда: интеграция стыков, README, ревью.
 
 ## 10. Конвенции
 
@@ -292,8 +332,9 @@ Celery:
 - Коммиты: Conventional Commits (`feat(backend): ...`, `fix(pipeline): ...`, `spec: ...`).
 - Python: ruff + ruff format, type hints обязательны, pydantic v2. TS: eslint + prettier, strict.
 - Секреты только в `.env` (gitignored). `.env.example` с локальными значениями по умолчанию.
+- CI только локально: `./scripts/check.sh` перед PR, GitHub Actions в репозитории хакатона не включаем.
 - Тесты: backend pytest + httpx; pipeline pytest на fake и на чистые функции; frontend минимум vitest на утилиты.
-- Никаких внешних вызовов из кода по умолчанию. Любой облачный провайдер за флагом.
+- Никаких внешних вызовов при обработке аудио/текста. Облачные ИИ-провайдеры запрещены.
 
 ## 11. Вне scope
 
@@ -304,6 +345,6 @@ Celery:
 | Риск | Митигация |
 |---|---|
 | Whisper плохо берёт шала-казахский | Проверить на реальной записи в первый час; форс `ru` + LLM-постправка; казахский fine-tune whisper с HF как запасной |
-| pyannote медленный на CPU | Демо-запись 3-5 минут; `STT_BACKEND=nvidia` для скорости на демо; в README честно |
-| Бот Meet не пускают / не пишет звук | Meet первым, остальные адаптерами; если не взлетает, остаётся файл + live, бот в README как roadmap с кодом |
+| pyannote медленный на CPU | Демо-запись 3-5 минут; замер на целевом железе, при необходимости локальный GPU; реальное время указать в README |
+| Бот не входит / не пишет звук | Проверить гостевой доступ и допуск, затем аудиоканал. Meet, Zoom и Teams остаются обязательными; непроверенные платформы отмечаются явно. SDK или учётная сессия требуют отдельной интеграции |
 | LLM выдумывает поручения | Шаг Verify по дословной цитате в коде, confidence в UI, черновик подтверждает секретарь |
