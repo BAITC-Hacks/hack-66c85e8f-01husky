@@ -120,7 +120,7 @@ pnpm mock
 
 | Возможность | Статус | Подробности |
 |---|:---:|---|
-| Backend: авторизация, совещания, поручения, участники, уведомления | ✅ | FastAPI + Celery, 87 тестов, end-to-end HTTP smoke |
+| Backend: авторизация, совещания, поручения, участники, уведомления | ✅ | FastAPI + Celery, 112 тестов, end-to-end HTTP smoke |
 | Веб-интерфейс: все экраны, RU/KK, тёмная тема | ✅ | Работает с настоящим backend (`pnpm dev`) и на моках (`pnpm mock`) |
 | Три источника записи: файл, микрофон, бот | ✅ | Загрузка файла, live-запись через WebSocket, очередь для бота |
 | Экспорт протокола DOCX / PDF на RU и KK | ✅ | python-docx + LibreOffice; [образец](docs/demo/protocol.pdf) |
@@ -133,10 +133,11 @@ pnpm mock
 | Бот-участник Microsoft Teams | 🟡 | Живой гостевой вход подтверждён; путь записи из Chromium в Whisper проверен в контейнере |
 | Бот-участник Google Meet / Zoom | 🟡 | Адаптеры готовы; на тестовых встречах сервер отказал гостевому входу. Для Zoom нужен официальный RTMS ([отчёт](docs/meeting-bot-access.md)) |
 | Docker Compose on-premise | 🟡 | Конфигурация готова, bot-worker проверен в Compose; полный прогон стека ещё не подтверждён |
-| Извлечение поручений и саммари локальной LLM | 🔜 | Контракт, хранение и UI готовы; пока работают на fake-пайплайне. Модель: Qwen3 через Ollama |
+| Извлечение поручений и саммари локальной LLM | 🟡 | Локальная Qwen3:8b через Ollama; проверка цитат и сроков, черновики для проверки человеком |
+| Контекстные имена спикеров и гости | 🟡 | Явная передача слова / самопредставление; неизвестные названные люди добавляются как гости |
 | Узнавание участника по голосовому эталону | 🔜 | API и UI загрузки эталона есть; модель не подключена |
 
-Реальный пайплайн сейчас возвращает транскрипт и анонимные метки `speaker1`, `speaker2`. Имена участников секретарь назначает вручную; система не угадывает их по списку.
+Реальный пайплайн возвращает транскрипт, метки `speaker1`, `speaker2`, поручения-черновики и саммари. Явная передача слова или самопредставление может связать голос с именем (источник `llm`, не голосовой эталон). Неоднозначные имена остаются для ручной привязки; порядок списка участников не используется. Коррекция коротких сдвигов границы спикера уменьшает разрывы внутри предложения, но не гарантирует точность диаризации. Извлечение может пропускать поручения или оставлять смысловые дубликаты.
 
 ## Архитектура
 
@@ -152,7 +153,7 @@ flowchart LR
     API <--> DB[(PostgreSQL)]
     subgraph WK[worker: pipeline.process]
         direction TB
-        S1[Whisper STT] --> S2[Диаризация] --> S3[Маскирование<br/>ИИН / телефонов] --> S4[Поручения + саммари<br/>Qwen3 · Ollama]
+        S1[Whisper STT] --> S2[Диаризация] --> S3[Маскирование<br/>ИИН / телефонов] --> S4[Поручения + саммари<br/>Qwen3:8b · Ollama]
     end
     WK -->|MeetingResult| DB
     BEAT[beat: check_deadlines<br/>каждый час] --> DB
@@ -174,7 +175,7 @@ flowchart LR
 
 | Слой | Технологии |
 |---|---|
-| Пайплайн | Python 3.12, faster-whisper (`large-v3-turbo`), sherpa-onnx (pyannote segmentation 3.0 + NeMo TitaNet), Ollama (Qwen3), pydantic v2 |
+| Пайплайн | Python 3.12, faster-whisper (`large-v3-turbo`), sherpa-onnx (pyannote segmentation 3.0 + NeMo TitaNet), Ollama (Qwen3:8b), pydantic v2 |
 | Backend | FastAPI, SQLAlchemy 2, Alembic, PostgreSQL 16, Celery 5 + Redis, python-docx, LibreOffice, ffmpeg |
 | Frontend | Next.js 15 (App Router), React 19, TypeScript, Tailwind v4, shadcn/ui, TanStack Query, next-intl (ru / kk) |
 | Бот | Playwright (Chromium), Xvfb, PulseAudio, ffmpeg |
@@ -184,7 +185,7 @@ flowchart LR
 
 ### Docker Compose
 
-Нужен Docker с Compose v2. Для LLM (`qwen3:14b`) нужно 16 ГБ ОЗУ; на меньшем объёме задайте `LLM_MODEL=qwen3:8b`.
+Нужен Docker с Compose v2. По умолчанию LLM — `qwen3:8b`; локальный запуск проверен на Mac с 16 ГБ RAM. Подготовка весов, приватность и ограничения описаны в [локальной LLM](docs/local-llm.md).
 
 ```bash
 cp .env.example .env        # затем замените SECRET_KEY случайным значением
@@ -200,6 +201,9 @@ docker compose up -d --build
 
 По умолчанию Compose работает с `PIPELINE_FAKE=1`: результат детерминированный, ML-модели не нужны. Образ worker с ML-зависимостями и томом весов пока не собран. Настоящее распознавание проверено при [локальном запуске без Docker](docs/local-development.md).
 
+Для подготовки LLM внутри контейнера: `docker compose exec ollama ollama pull qwen3:8b`.
+Веса скачиваются заранее; обработка не обращается к облачным моделям.
+
 ### Локально с настоящим Whisper (macOS)
 
 Проверенная инструкция: [docs/local-development.md](docs/local-development.md). Скрипт поднимает отдельные PostgreSQL и Redis, генерирует пароли и запускает API с Celery. Модели диаризации описаны в [docs/local-diarization.md](docs/local-diarization.md).
@@ -209,6 +213,9 @@ brew install postgresql@16 redis ffmpeg uv
 uv sync --project backend --extra stt
 backend/.venv/bin/python scripts/local_dev.py setup
 ```
+
+Реальный пайплайн также требует запущенную Ollama с подготовленной Qwen3:8b:
+[инструкция локальной LLM](docs/local-llm.md). Без модели обработка возвращает явную ошибку.
 
 <details>
 <summary><b>Ручной запуск backend с fake-пайплайном</b></summary>

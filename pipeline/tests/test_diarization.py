@@ -9,7 +9,7 @@ from pipeline.diarization import SpeakerTurn, _load_diarizer, diarize
 from pipeline.models import Participant
 from pipeline.privacy import mask_sensitive_parts
 from pipeline.settings import PipelineSettings
-from pipeline.speaker_alignment import align_speakers
+from pipeline.speaker_alignment import align_speakers, join_continuations
 from pipeline.stt.local_whisper import Transcript, TranscriptSegment, TranscriptWord
 
 
@@ -40,6 +40,10 @@ def test_identity_is_not_inferred_from_names_or_participant_order(monkeypatch):
     transcript = Transcript([TranscriptSegment(0, 1, "Дана, сделай")], 1, "ru", 1, "test")
     monkeypatch.setattr(real, "transcribe", lambda *a, **k: transcript)
     monkeypatch.setattr(real, "diarize", lambda *a, **k: [SpeakerTurn(0, 1, 8)])
+    from pipeline.extract import Extraction
+
+    monkeypatch.setattr(real, "OllamaLLM", lambda *a: object())
+    monkeypatch.setattr(real, "extract", lambda *a, **k: Extraction([], ""))
     result = real.process("unused", date(2026, 9, 23), [Participant(id=5, name="Дана")], [])
     assert result.speaker_map[0].participant_id is None
     assert result.segments[0].speaker == "speaker1"
@@ -147,3 +151,72 @@ def test_decoder_failure_does_not_leak_data(tmp_path, monkeypatch):
     monkeypatch.setitem(sys.modules, "faster_whisper.audio", SimpleNamespace(decode_audio=fail))
     with pytest.raises(RuntimeError, match="Local speaker diarization failed"):
         diarize(str(path), PipelineSettings())
+
+
+def test_mid_sentence_jitter_snaps_to_sentence_end_but_not_next_reply():
+    words = [
+        TranscriptWord(55.02, 55.3, "Алло"),
+        TranscriptWord(55.3, 55.5, " Столгатович,"),
+        TranscriptWord(55.5, 55.78, " по"),
+        TranscriptWord(55.78, 56.1, " инвестициям"),
+        TranscriptWord(56.1, 56.3, " что"),
+        TranscriptWord(56.3, 56.66, " у нас?"),
+    ]
+    transcript = [
+        TranscriptSegment(55.02, 56.66, "Алло Столгатович, по инвестициям что у нас?", words),
+        TranscriptSegment(56.66, 61.58, "По инвестпрограмме освоение 68%."),
+    ]
+    turns = [SpeakerTurn(50, 55.78, 3), SpeakerTurn(55.78, 62, 4)]
+    result = align_speakers(transcript, turns, boundary_grace=1.2)
+    assert len(result.segments) == 2
+    assert result.segments[0].text == transcript[0].text
+    assert result.segments[0].speaker != result.segments[1].speaker
+    assert result.adjusted_boundary_words == 3
+    assert len(align_speakers(transcript, turns, boundary_grace=0).segments) == 3
+    # An audible pause at the switch means do NOT smooth.
+    words[2].end = 55.5
+    assert align_speakers(transcript, turns, boundary_grace=1.2).adjusted_boundary_words == 0
+
+
+def test_earlier_overlapping_voice_does_not_disable_later_boundary_correction():
+    words = [
+        TranscriptWord(55.02, 55.12, " Алло"),
+        TranscriptWord(55.12, 55.56, " Столгатович,"),
+        TranscriptWord(55.64, 55.78, " по"),
+        TranscriptWord(55.78, 56.26, " инвестициям"),
+        TranscriptWord(56.26, 56.4, " что"),
+        TranscriptWord(56.4, 56.52, " у"),
+        TranscriptWord(56.52, 56.66, " нас?"),
+    ]
+    segment = TranscriptSegment(55.02, 56.66, "Алло Столгатович, по инвестициям что у нас?", words)
+    turns = [
+        SpeakerTurn(54.149, 55.972, 2),
+        SpeakerTurn(54.858, 55.364, 6),
+        SpeakerTurn(55.972, 68.61, 6),
+    ]
+    result = align_speakers([segment], turns, boundary_grace=1.2)
+    assert len(result.segments) == 1 and result.adjusted_boundary_words == 4
+    # Simultaneous speech at the actual switch is NOT corrected.
+    turns.append(SpeakerTurn(55.7, 56.3, 2))
+    assert align_speakers([segment], turns, boundary_grace=1.2).adjusted_boundary_words == 0
+
+
+def test_join_asr_line_wraps_preserves_real_turns_and_sentences():
+    from pipeline.models import Segment
+
+    parts = [
+        Segment(start=i, end=i + 1, speaker=s, text=t, lang="ru")
+        for i, (s, t) in enumerate(
+            [
+                ("speaker1", "Пропишите в договорах срок выставления"),
+                ("speaker1", "счета."),
+                ("speaker1", "Следующий вопрос."),
+                ("speaker2", "Подготовлю уведомление"),
+                ("speaker3", "Хорошо."),
+            ]
+        )
+    ]
+    joined = join_continuations(parts)
+    assert len(joined) == 4
+    assert joined[0].text == "Пропишите в договорах срок выставления счета."
+    assert parts[0].text == "Пропишите в договорах срок выставления"

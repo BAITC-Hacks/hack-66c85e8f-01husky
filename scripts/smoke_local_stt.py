@@ -55,15 +55,18 @@ def main() -> None:
                 assert detail["segments"], "Expected speech in the supplied recording"
                 assert (
                     detail["model_info"]["processing_mode"]
-                    == "local_offline_stt_diarization"
+                    == "local_stt_diarization_ollama"
                 )
                 speakers = list(dict.fromkeys(s["speaker"] for s in detail["segments"]))
                 assert len(speakers) >= args.min_speakers
                 assert speakers == [f"speaker{i + 1}" for i in range(len(speakers))]
                 assert [s["speaker"] for s in detail["speaker_map"]] == sorted(speakers)
-                assert all(s["participant_id"] is None for s in detail["speaker_map"])
-                assert detail["tasks"] == []
-                assert detail["summary"] == ""
+                for task in detail["tasks"]:
+                    assert (
+                        task["quote"] in detail["segments"][task["segment_idx"]]["text"]
+                    )
+                assert detail["model_info"]["llm"]
+                assert detail["summary"]
                 assert detail["progress_pct"] == 100
                 print(
                     f"PASS: meeting {meeting_id}, {len(detail['segments'])} persisted segments, "

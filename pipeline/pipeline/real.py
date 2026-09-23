@@ -1,11 +1,14 @@
-"""Local STT and acoustic speaker diarization; identities/LLM stages remain unavailable."""
+"""Offline STT/diarization followed by a self-hosted LLM; no external processing APIs."""
 
 from datetime import date
 
 from pipeline.diarization import diarize
+from pipeline.extract import extract
+from pipeline.identity import identify_speakers
+from pipeline.llm import OllamaLLM
 from pipeline.models import MeetingResult, OutputLanguage, Participant, ProgressCallback
 from pipeline.settings import PipelineSettings
-from pipeline.speaker_alignment import align_speakers
+from pipeline.speaker_alignment import align_speakers, join_continuations
 from pipeline.stt.local_whisper import transcribe
 
 
@@ -21,33 +24,58 @@ def process(
     transcript = transcribe(
         audio_path,
         settings,
-        progress=(lambda stage, pct: progress(stage, pct * 0.75)) if progress else None,
+        progress=(lambda stage, pct: progress(stage, pct * 0.55)) if progress else None,
     )
     if progress:
-        progress("diarize", 0.70)
+        progress("diarize", 0.50)
     turns = (
         diarize(
             audio_path,
             settings,
-            progress=(lambda pct: progress("diarize", 0.70 + 0.24 * pct)) if progress else None,
+            progress=(lambda pct: progress("diarize", 0.50 + 0.22 * pct)) if progress else None,
         )
         if transcript.segments
         else []
     )
-    aligned = align_speakers(transcript.segments, turns)
+    aligned = align_speakers(
+        transcript.segments,
+        turns,
+        boundary_grace=settings.diarization_boundary_grace_sec,
+    )
     if progress:
-        progress("privacy", 0.95)
-    segments = aligned.segments
+        progress("extract", 0.74)
+    segments = join_continuations(aligned.segments)
+    llm = OllamaLLM(settings) if segments else None
+    speaker_map, identity_hints = identify_speakers(
+        segments,
+        aligned.speaker_map,
+        participants,
+        llm,
+    )
+    extracted = extract(
+        segments,
+        meeting_date,
+        participants,
+        directions,
+        output_language,
+        settings,
+        progress,
+        llm=llm,
+    )
+    mapped_ids = {sm.speaker: sm.participant_id for sm in speaker_map}
+    for task in extracted.tasks:
+        if task.assignee_name in mapped_ids:
+            task.assignee_participant_id = mapped_ids[task.assignee_name]
     result = MeetingResult(
         segments=segments,
-        speaker_map=aligned.speaker_map,
-        tasks=[],
-        summary="",
+        speaker_map=speaker_map,
+        tasks=extracted.tasks,
+        summary=extracted.summary,
         language_stats={"other": 1.0} if segments else {},
         duration_sec=transcript.duration,
         model_info={
             "stt": f"faster-whisper {transcript.model}",
-            "processing_mode": "local_offline_stt_diarization",
+            "processing_mode": "local_stt_diarization_ollama",
             "detected_language": transcript.detected_language,
             "language_probability": str(transcript.language_probability),
             "segment_language": "unavailable",
@@ -60,9 +88,15 @@ def process(
             "alignment_distant_words": str(aligned.distant_words),
             "alignment_overlapping_words": str(aligned.overlapping_words),
             "alignment_coarse_segments": str(aligned.coarse_segments),
+            "alignment_adjusted_boundary_words": str(aligned.adjusted_boundary_words),
+            "boundary_grace_sec": str(settings.diarization_boundary_grace_sec),
             "voiceprint": "unavailable",
-            "extract": "unavailable",
-            "summary": "unavailable",
+            "llm": settings.llm_model,
+            "extract": "local_candidates_verified_classified_v1",
+            "extract_rejected": str(extracted.rejected),
+            "summary": "local_ollama",
+            "speaker_identity": "explicit_handoff_or_introduction",
+            "identity_hints": str(identity_hints),
             "privacy": "phone_iin_patterns_v1",
         },
     )

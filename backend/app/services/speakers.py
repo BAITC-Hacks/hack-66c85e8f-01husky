@@ -1,5 +1,7 @@
 """Speaker → participant mapping and assignee recalculation after manual edits."""
 
+from pipeline.assignees import resolve_assignee
+from pipeline.models import Participant as PipelineParticipant
 from sqlalchemy.orm import Session
 
 from app.models import Meeting, Participant, SpeakerMap
@@ -34,21 +36,16 @@ def recalc_assignees(db: Session, m: Meeting) -> None:
     for t in m.tasks:
         if not t.assignee_name:
             continue
+        by_speaker = {sm.speaker: sm.participant_id for sm in m.speaker_map}
+        if t.assignee_name in by_speaker:
+            t.assignee_participant_id = by_speaker[t.assignee_name]
+            continue
         match = _match_name(t.assignee_name, participants.values())
         if match is not None:
             t.assignee_participant_id = match.id
 
 
 def _match_name(name: str, participants) -> Participant | None:
-    n = name.lower().strip()
-    if not n:
-        return None
-    first = n.split()[0]
-    for p in participants:
-        pn = p.name.lower()
-        if pn == n or pn.startswith(n) or n.startswith(pn):
-            return p
-    for p in participants:
-        if first and p.name.lower().split()[0].startswith(first[: max(3, len(first) - 2)]):
-            return p
-    return None
+    people = list(participants)
+    pid = resolve_assignee(name, [PipelineParticipant(id=p.id, name=p.name) for p in people])
+    return next((p for p in people if p.id == pid), None)

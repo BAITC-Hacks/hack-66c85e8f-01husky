@@ -10,6 +10,7 @@ from sqlalchemy import select
 from app.db import SessionLocal
 from app.models import Direction, Meeting, Participant, Segment, SpeakerMap, Task
 from app.models.enums import MeetingStatus, SpeakerSource, TaskStatus, Urgency
+from app.services.guests import resolve_guests
 from app.tasks.celery_app import celery_app
 
 log = logging.getLogger(__name__)
@@ -24,6 +25,7 @@ def _set_progress(meeting_id: int, stage: str, pct: float) -> None:
 
 
 def persist_result(db, m: Meeting, result: MeetingResult) -> None:
+    resolve_guests(db, m, result)
     m.segments.clear()
     m.speaker_map.clear()
     m.tasks.clear()

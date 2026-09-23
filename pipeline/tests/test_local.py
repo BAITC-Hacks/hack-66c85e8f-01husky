@@ -34,6 +34,15 @@ def test_real_pipeline_masks_before_result_and_does_not_invent_tasks(tmp_path, m
 
     monkeypatch.setattr(local_whisper, "_load_model", lambda *args: Model())
     monkeypatch.setattr(real, "diarize", lambda *args, **kwargs: [SpeakerTurn(0, 1, 7)])
+    from pipeline.extract import Extraction
+
+    monkeypatch.setattr(real, "OllamaLLM", lambda *a: object())
+
+    def mocked_extract(segments, *a, **k):
+        assert segments[0].text == "ИИН [IIN], [PHONE]"
+        return Extraction([], "")
+
+    monkeypatch.setattr(real, "extract", mocked_extract)
     stages = []
     result = process(str(audio), date(2026, 9, 23), [], [], progress=lambda s, p: stages.append(p))
     assert result.segments[0].text == "ИИН [IIN], [PHONE]"
@@ -43,7 +52,7 @@ def test_real_pipeline_masks_before_result_and_does_not_invent_tasks(tmp_path, m
     assert result.speaker_map[0].participant_id is None
     assert result.speaker_map[0].source == "none"
     assert result.summary == ""
-    assert result.model_info["extract"] == "unavailable"
+    assert result.model_info["extract"] == "local_candidates_verified_classified_v1"
     assert stages == sorted(stages) and stages[-1] == 1
 
 
