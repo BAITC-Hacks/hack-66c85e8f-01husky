@@ -10,7 +10,6 @@ from pathlib import Path
 
 from faster_whisper import WhisperModel
 
-
 ROOT = Path(__file__).resolve().parent
 MODELS_DIR = ROOT / ".models"
 
