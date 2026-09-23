@@ -76,5 +76,5 @@ def test_env_switch(monkeypatch: pytest.MonkeyPatch) -> None:
     r = pipeline.process("x.wav", date(2026, 9, 23), PARTICIPANTS, DIRECTIONS)
     assert r.model_info["stt"] == "fake"
     monkeypatch.setenv("PIPELINE_FAKE", "0")
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(FileNotFoundError):
         pipeline.process("x.wav", date(2026, 9, 23), PARTICIPANTS, DIRECTIONS)

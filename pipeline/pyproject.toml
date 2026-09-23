@@ -5,9 +5,11 @@ description = "Meeting protocol AI pipeline: STT, diarization, voiceprint, task 
 requires-python = ">=3.12"
 dependencies = [
     "pydantic>=2.7",
+    "pydantic-settings>=2.4",
 ]
 
 [project.optional-dependencies]
+stt = ["faster-whisper==1.2.1"]
 # Heavy ML deps live here so backend can install the contract-only package.
 ml = [
     "faster-whisper>=1.1",

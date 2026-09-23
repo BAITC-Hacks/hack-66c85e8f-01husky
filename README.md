@@ -52,11 +52,11 @@ HackAlem AI · команда 01husky · кейс «Система автопр�
 
 ## Что умеет
 
-Сопоставление с ТЗ и текущим состоянием ветки `nikita`:
+Сопоставление с ТЗ и текущим состоянием ветки `feat/pipeline`:
 
 | Требование | Что показать | Готовность |
 |---|---|---|
-| Русская, казахская и смешанная речь | Реплики ru/kk/mixed из одной встречи | Демо-фикстура есть; реальный STT в работе |
+| Русская, казахская и смешанная речь | Реальный локальный Whisper через API | STT подключён; качество RU/KK/mixed ещё нужно оценить |
 | Диаризация и привязка поручения к человеку | Спикер, участник и ответственный за поручение | Контракт и ручная правка через API готовы; модели в работе |
 | Поручения с ответственным и сроком | Цитата → суть → человек → календарная дата | Хранение и редактирование готовы; извлечение проверено на fake |
 | Саммари | Тема, решения, поручения, открытые вопросы | Backend принимает и экспортирует; генерация моделью в работе |
@@ -133,20 +133,18 @@ docker compose up -d --build
 - Фронтенд разрабатывается отдельно; в текущей ветке доступен backend API.
 - Учётная запись: `admin@example.com` / `admin123`
 
-По умолчанию `PIPELINE_FAKE=1`: результат детерминированный, ML-модели не нужны. После интеграции реального пайплайна потребуются локальные веса и переключение режима:
+По умолчанию Compose использует `PIPELINE_FAKE=1`: результат детерминированный, ML-модели не нужны. Контейнер worker с ML-зависимостями и томом весов ещё предстоит подготовить; простого переключения флага недостаточно. Проверенный запуск настоящего STT сейчас — [локально без Docker](docs/local-development.md).
 
 ```bash
 # один раз: скачать LLM внутрь контейнера ollama
 docker compose exec ollama ollama pull qwen3:14b
-# в .env
-PIPELINE_FAKE=0
-HF_TOKEN=hf_...          # нужен для загрузки весов pyannote (лицензия принимается на huggingface.co)
-docker compose restart api worker
 ```
 
 Способ загрузки и хранения весов whisper/pyannote нужно уточнить при интеграции реального пайплайна. Ollama хранит свои модели в volume `ollama-data`.
 
 ## Запуск без Docker (разработка)
+
+**Для настоящего Whisper и локальной БД используйте [проверенную инструкцию macOS](docs/local-development.md).** Она поднимает отдельный PostgreSQL/Redis и API на localhost с приватной конфигурацией. Ниже — ручная конфигурация backend с fake-пайплайном; не смешивайте её с автоматически созданным `.env`.
 
 Нужны: Python 3.12, [uv](https://docs.astral.sh/uv/), PostgreSQL 16, Redis, ffmpeg, LibreOffice (для PDF).
 
@@ -342,7 +340,8 @@ docker compose exec -T api uv run --no-sync python scripts/smoke_backend.py --ap
 |---|---|
 | Бэкенд: auth, участники, совещания (файл / live / бот), поручения, уведомления, напоминания, экспорт DOCX / PDF, СЭД-mock | готово, покрыто тестами и end-to-end smoke |
 | Контракт пайплайна и `PIPELINE_FAKE` | готово; интеграция backend проверена на детерминированной заглушке |
-| Реальный пайплайн (`pipeline/real.py`: whisper, pyannote, voiceprint, LLM-агент, саммари, privacy) | в работе; до его появления `pipeline.cli` без `PIPELINE_FAKE=1` завершается `NotImplementedError` |
+| Локальный STT и маскирование телефонов/ИИН | работают CLI и API → Redis/Celery → PostgreSQL; реальная запись проверена |
+| Диаризация, voiceprint, извлечение поручений и саммари | ещё не реализованы; реальный режим возвращает только текст/таймкоды и явные `unavailable` |
 | Фронтенд | отдельное Next.js-приложение, в работе |
 | Бот Meet / Zoom / Teams | жизненный цикл, запись, загрузка и CLI-контракт готовы; адаптеры селекторов web-клиентов в работе |
 | Docker Compose | конфигурация и локальный check.sh добавлены; сборка и запуск контейнеров пока не подтверждены |
@@ -351,7 +350,7 @@ docker compose exec -T api uv run --no-sync python scripts/smoke_backend.py --ap
 
 ```
 frontend/      Next.js-приложение, полностью делает Эмир (свой каркас, типы и Dockerfile)
-backend/       FastAPI, Celery, Alembic, экспорт, СЭД-адаптер (владелец: Никита)
+backend/       FastAPI, Celery, Alembic, экспорт, СЭД-адаптер (владелец: Ардак)
   app/routers/     auth, participants, directions, meetings, tasks, notifications, exports
   app/services/    audio, access, speakers, notify, export, sed/
   app/tasks/       celery_app, process_meeting, reminders, run_bot
@@ -362,7 +361,7 @@ pipeline/      ML-пайплайн как библиотека (владелец
   pipeline/fake.py     детерминированная заглушка (PIPELINE_FAKE=1)
   pipeline/real.py     реальная реализация: stt/, diarize, voiceprint, extract, summary, privacy
   pipeline/cli.py      python -m pipeline.cli <audio> --date ...
-bots/          Playwright-бот для Meet / Zoom / Teams (владелец: Ардак)
+bots/          Playwright-бот для Meet / Zoom / Teams (другой участник)
 docs/superpowers/specs/   проектная спецификация
 docker-compose.yml, .env.example, backend/Dockerfile
 ```

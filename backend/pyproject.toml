@@ -21,6 +21,9 @@ dependencies = [
     "pipeline",
 ]
 
+[project.optional-dependencies]
+stt = ["pipeline[stt]"]
+
 [dependency-groups]
 dev = [
     "pytest>=8",

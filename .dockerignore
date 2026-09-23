@@ -9,3 +9,7 @@ backend/data
 backend/outbox
 frontend/node_modules
 frontend/.next
+pipeline/.models
+pipeline/recordings
+**/*.transcript.json
+**/*.transcript.md

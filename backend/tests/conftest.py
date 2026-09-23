@@ -5,11 +5,13 @@ os.environ["DATABASE_URL"] = os.getenv(
     "TEST_DATABASE_URL", "postgresql+psycopg://protocol:protocol@localhost:5432/protocol_test"
 )
 os.environ["SECRET_KEY"] = "test-secret"
+os.environ["BOT_API_TOKEN"] = "change-me-bot-token"
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 
+from app.config import get_settings
 from app.db import Base, SessionLocal, engine
 from app.main import app
 from app.models import Direction, Participant, User
@@ -19,13 +21,17 @@ from app.security import hash_password
 
 @pytest.fixture(scope="session", autouse=True)
 def _schema():
+    if not engine.url.database or not engine.url.database.endswith("_test"):
+        raise RuntimeError("Tests require an isolated database ending in _test")
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
     yield
 
 
 @pytest.fixture(autouse=True)
-def db():
+def db(tmp_path, monkeypatch):
+    monkeypatch.setattr(get_settings(), "data_dir", tmp_path / "data")
+    monkeypatch.setattr(get_settings(), "outbox_dir", tmp_path / "outbox")
     with SessionLocal() as s:
         tables = ", ".join(t.name for t in reversed(Base.metadata.sorted_tables))
         s.execute(text(f"TRUNCATE {tables} RESTART IDENTITY CASCADE"))
