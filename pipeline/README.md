@@ -4,7 +4,8 @@
 
 ```bash
 cd pipeline
-uv sync                      # только контракт + pydantic
+uv sync                      # контракт + настройки
+uv sync --extra stt          # + локальный Whisper
 uv sync --extra ml           # + whisper, pyannote, speechbrain
 uv run pytest
 PIPELINE_FAKE=1 uv run python -m pipeline.cli sample.wav --date 2026-09-23
@@ -14,7 +15,9 @@ PIPELINE_FAKE=1 uv run python -m pipeline.cli sample.wav --date 2026-09-23
 
 ## Локальная транскрипция Whisper
 
-`transcribe_local.py` — самостоятельный CLI для локальной проверки `faster-whisper` на macOS. Он не отправляет аудио в облачные сервисы. При первом запуске модель скачивается один раз в `pipeline/.models/`; затем `--offline` запрещает любые загрузки модели.
+`transcribe_local.py` и backend используют общий провайдер `pipeline/stt/local_whisper.py`. Аудио не отправляется в облако. Транскрипция всегда offline: веса должны быть подготовлены заранее, иначе будет ошибка. `--offline` оставлен для совместимости.
+
+При `PIPELINE_FAKE=0` работает настоящий STT, но диаризация, поручения, саммари и voiceprint пока не реализованы: `SPEAKER_UNKNOWN`, пустые задачи и summary, статусы `unavailable` в `model_info`. Общий язык файла не считается языком каждой реплики; сегменты пока имеют `lang=other`.
 
 ### Установка минимального окружения
 
@@ -23,6 +26,8 @@ cd pipeline
 /opt/homebrew/bin/python3.12 -m venv .venv
 .venv/bin/python -m pip install --upgrade pip
 .venv/bin/pip install -r requirements-local.txt
+# Отдельная подготовка с доступом в интернет, без аудио/текста:
+HF_HUB_OFFLINE=0 .venv/bin/python -m pipeline.download_model
 ```
 
 ### Расшифровка
@@ -40,10 +45,16 @@ cd pipeline
 .venv/bin/python transcribe_local.py recordings/meeting.m4a --language ru --output recordings/ru.transcript.json
 ```
 
-После первой загрузки модели используйте строго локальный режим:
+Режим всегда строго локальный, в том числе с прежним флагом:
 
 ```bash
 .venv/bin/python transcribe_local.py recordings/meeting.m4a --offline
 ```
 
-По умолчанию используется `large-v3-turbo` в CPU-режиме `int8`, подходящий для русско-казахской речи на Apple Silicon. Для быстрой проверки можно указать `--model small`, но качество смешанной речи будет ниже.
+По умолчанию используется `large-v3-turbo` в CPU-режиме `int8`. Качество русского, казахского и смешанной речи нужно оценить на размеченных записях, сравнив auto/ru/kk. Другую модель необходимо сначала отдельно скачать.
+
+Настройки из корневого `.env` и окружения: `STT_MODEL`, `STT_MODEL_DIR` (по умолчанию `pipeline/.models`), `STT_LANGUAGE=auto|ru|kk`, `STT_DEVICE=cpu`, `STT_COMPUTE_TYPE=int8`, `STT_CPU_THREADS=4`. `STT_BACKEND` допускает только `local`.
+
+В JSON сохраняются текст и таймкоды; цифровые шаблоны телефонов и ИИН маскируются. Это не полная анонимизация. Сырые word-level тексты не экспортируются. Записи и кеш весов не входят в Git.
+
+[Запуск с PostgreSQL, Redis, Celery и API](../docs/local-development.md).

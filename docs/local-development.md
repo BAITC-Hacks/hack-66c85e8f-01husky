@@ -1,0 +1,124 @@
+# Локальный backend с PostgreSQL и Whisper (macOS)
+
+Проверено на Apple M4, Python 3.12. Это этап STT: настоящая транскрипция через
+HTTP → Redis → Celery → Whisper → PostgreSQL. Бот разрабатывается другим участником.
+Frontend в этой ветке отсутствует; ниже — API для подключения его отдельно.
+
+## Установка и запуск
+
+Все команды из корня репозитория. Порты 5432, 6379, 8000 должны быть свободны.
+
+```bash
+brew install postgresql@16 redis ffmpeg uv
+uv sync --project backend --extra stt
+backend/.venv/bin/python scripts/local_dev.py setup
+```
+
+`setup` создаёт собственный кластер PostgreSQL в `backend/data/local/postgres`, базы
+`protocol` и `protocol_test`, запускает Redis с паролем, применяет миграции и seed.
+Пароли генерируются в игнорируемый `.env` с правами 0600. Чужой существующий `.env`
+скрипт не перезаписывает: сохраните его отдельно и настройте окружение осознанно.
+Не запускайте параллельно `brew services start` или Compose на тех же портах.
+
+Подготовка весов — отдельная операция с доступом к интернету, без аудио и текста:
+
+```bash
+uv run --project backend --extra stt --env-file .env env HF_HUB_OFFLINE=0 python -m pipeline.download_model
+```
+
+Если `large-v3-turbo` уже есть в `pipeline/.models/`, повторно скачивать не нужно.
+В закрытый контур перенесите подготовленный кеш целиком, включая структуру и ссылки.
+При транскрипции всегда действует `local_files_only=True`: автоматического скачивания нет.
+
+```bash
+backend/.venv/bin/python scripts/local_dev.py start
+backend/.venv/bin/python scripts/local_dev.py status
+```
+
+Запускаются API, Celery worker (solo, один процесс) и beat. PostgreSQL, Redis и API
+слушают только `127.0.0.1`. После перезагрузки компьютера снова выполните `start`.
+Это локальная dev-конфигурация, не промышленный деплой.
+
+## Подключение frontend
+
+- Swagger: <http://localhost:8000/docs>
+- API base URL: `http://localhost:8000/api/v1`
+- OpenAPI: <http://localhost:8000/openapi.json>
+- Health: <http://localhost:8000/api/v1/health> (`pipeline_fake: false`)
+- Seed-вход: `admin@example.com` / `admin123` — только для локальной разработки.
+
+CORS разрешает `http://localhost:3000`, `http://localhost:5173` и те же порты на
+`127.0.0.1`. Для cookie-авторизации используйте `credentials: "include"`
+(Axios: `withCredentials: true`). Не смешивайте hostname: если frontend на
+`localhost`, API тоже на `localhost`, а не на `127.0.0.1`.
+
+```javascript
+const base = "http://localhost:8000/api/v1";
+await fetch(`${base}/auth/login`, {
+  method: "POST",
+  credentials: "include",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ email: "admin@example.com", password: "admin123" }),
+});
+const meetings = await fetch(`${base}/meetings`, { credentials: "include" });
+```
+
+У корневого `/` нет страницы — ответ 404 ожидаем. Фронтенд запускается отдельно.
+После изменения `.env`/кода перезапустите app-процессы (`stop`, дождитесь остановки,
+затем `start`); автоматического reload нет.
+
+## Данные и ограничения этапа
+
+PostgreSQL: `127.0.0.1:5432`, база/пользователь `protocol`, пароль в `.env`.
+В БД хранятся пользователи, участники, встречи, сегменты, поручения и уведомления.
+Аудио лежит на диске в `backend/data/audio`, а не в PostgreSQL; модель — в
+`pipeline/.models`. Эти каталоги и `.env` не должны попадать в Git/образ Docker.
+
+Сейчас `PIPELINE_FAKE=0` возвращает реальный текст и таймкоды. Диаризация, voiceprint,
+извлечение поручений и summary **ещё не реализованы**: `SPEAKER_UNKNOWN`, пустые
+`speaker_map`, `tasks`, `summary`; `model_info` содержит `unavailable` для этих этапов.
+`draft` означает окончание текущего STT-этапа, а не готовность полного протокола.
+Язык файла из Whisper — только подсказка, поэтому язык сегментов пока `other`.
+Качество русского/казахского/смешанного текста требует ручной проверки.
+
+Перед сохранением маскируются цифровые шаблоны телефонов +7/8 и 12-значных ИИН.
+Это не полная анонимизация: имена, номера словами и нестандартные форматы могут
+сохраниться. Исходное аудио тоже содержит персональные данные; для демо нужна
+смоделированная запись либо дополнительная анонимизация.
+STT не использует облачные API; LLM пока не вызывается. Проверка всего стека с
+сетевой блокировкой остаётся отдельной задачей этапа закрытого контура.
+
+## Проверки
+
+```bash
+backend/.venv/bin/python -m pytest pipeline/tests -q
+uv run --project backend --extra stt --env-file .env python -m pytest backend/tests -q
+uv run --project backend --extra stt --env-file .env python backend/scripts/smoke_backend.py
+backend/.venv/bin/python scripts/smoke_local_stt.py "pipeline/recordings/Совещание №1.mp3"
+```
+
+Первые три команды проверяют код с подменами ML. Backend pytest использует отдельную
+`protocol_test` и временные каталоги; HTTP smoke создаёт изолированную схему.
+Для PDF-тестов нужен LibreOffice (`soffice` в PATH). Последняя команда использует
+настоящий Whisper, очередь и dev-базу: **создаёт и оставляет встречу** для проверки UI.
+Запись не поставляется в Git, путь замените на свою запись с согласия участников.
+
+Проверено 23.09.2026: 67 backend-тестов, 19 pipeline-тестов, HTTP smoke с DOCX/PDF.
+«Совещание №1» (274 секунды) прошло через настоящую очередь; в dev-базе создана
+встреча №1, статус `draft`, 47 сохранённых сегментов. Это проверка интеграции,
+не оценка точности STT.
+
+Дополнительно настоящая кешированная модель проверена на трёх секундах тишины
+(пустой транскрипт) и повреждённом файле (безопасная ошибка) с запрещёнными
+Python socket-подключениями. Это не заменяет системную сетевую изоляцию.
+
+## Остановка и диагностика
+
+```bash
+backend/.venv/bin/python scripts/local_dev.py stop
+```
+
+Останавливает только API/worker/beat. PostgreSQL и Redis продолжают работать,
+данные сохраняются. Логи и PID находятся в `backend/data/local/`.
+`status` показывает только app-процессы, не готовность обработки моделью.
+Не удаляйте каталог `backend/data`, чтобы не потерять базу и записи.

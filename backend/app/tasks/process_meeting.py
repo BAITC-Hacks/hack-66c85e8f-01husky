@@ -1,7 +1,6 @@
 """Celery task: run the pipeline on a meeting and persist MeetingResult (spec section 7)."""
 
 import logging
-import traceback
 
 import pipeline
 from pipeline.models import MeetingResult
@@ -113,10 +112,13 @@ def process_meeting(self, meeting_id: int) -> None:
             m.status, m.progress_stage, m.progress_pct = MeetingStatus.draft, "done", 100.0
             db.commit()
     except Exception as e:  # noqa: BLE001
-        log.error("process_meeting %s failed: %s\n%s", meeting_id, e, traceback.format_exc())
+        log.error("process_meeting %s failed (%s)", meeting_id, type(e).__name__)
         # The failed persistence session has closed and rolled back before this write.
         with SessionLocal() as db:
             m = db.get(Meeting, meeting_id)
             if m is not None:
-                m.status, m.error = MeetingStatus.failed, f"{type(e).__name__}: {e}"[:2000]
+                m.status, m.error = (
+                    MeetingStatus.failed,
+                    f"{type(e).__name__}: processing failed; check local model and audio configuration",
+                )
                 db.commit()
