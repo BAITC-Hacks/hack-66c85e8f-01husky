@@ -252,3 +252,22 @@ def test_navigation_guard_distinguishes_provider_page_from_subframes(
     bot._route(route)
     assert result == ["allowed" if allowed else "blocked"]
     assert bot.blocked_navigation is blocked_flag
+
+
+def test_meet_media_permission_prompt_after_join(chromium):
+    page = chromium.new_page()
+    page.set_content("""<body>
+      <p>Do you want people to see and hear you in the meeting?</p>
+      <button>Continue without microphone and camera</button>
+    </body>""")
+    page.get_by_role("button").evaluate("""button => button.onclick = () => {
+      document.body.innerHTML = '<button>Leave call</button>' +
+        '<button aria-label="Turn on captions">Captions</button>';
+    }""")
+    bot = MeetBot(BotConfig("meet", "private", 1, "private", "secret"))
+    bot.page = page
+    try:
+        bot.wait_admitted(1)
+        assert bot.admitted
+    finally:
+        page.close()
