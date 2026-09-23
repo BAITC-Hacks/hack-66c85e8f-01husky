@@ -144,6 +144,9 @@ docker compose exec ollama ollama pull qwen3:14b
 
 ## Запуск без Docker (разработка)
 
+Локальная админ-панель для просмотра таблиц БД: <http://localhost:8000/admin>.
+Вход под администратором; поиск, фильтры и полный текст записей, без редактирования/удаления.
+
 **Для настоящего Whisper и локальной БД используйте [проверенную инструкцию macOS](docs/local-development.md).** Она поднимает отдельный PostgreSQL/Redis и API на localhost с приватной конфигурацией. Ниже — ручная конфигурация backend с fake-пайплайном; не смешивайте её с автоматически созданным `.env`.
 
 Нужны: Python 3.12, [uv](https://docs.astral.sh/uv/), PostgreSQL 16, Redis, ffmpeg, LibreOffice (для PDF).

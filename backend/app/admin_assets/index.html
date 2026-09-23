@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Автопротокол · База данных</title>
+  <link rel="stylesheet" href="/admin-assets/style.css">
+  <script src="/admin-assets/app.js" defer></script>
+</head>
+<body>
+  <section id="login" class="login-shell">
+    <form id="login-form" class="login-card">
+      <span class="brand-icon">А</span><p class="eyebrow">АВТОПРОТОКОЛ / LOCAL</p>
+      <h1>Ваша база данных.<br>Всё на одном экране.</h1>
+      <p class="muted">Войдите как администратор, чтобы посмотреть встречи, транскрипты и поручения.</p>
+      <label>Email<input id="email" type="email" autocomplete="username" required placeholder="admin@example.com"></label>
+      <label>Пароль<input id="password" type="password" autocomplete="current-password" required></label>
+      <button id="login-button" class="primary" type="submit">Войти в панель →</button>
+      <p id="login-error" class="error" role="alert"></p>
+      <p class="footnote">Только просмотр · Без внешних сервисов</p>
+    </form>
+  </section>
+  <div id="workspace" class="workspace" hidden>
+    <aside>
+      <div class="brand"><span class="brand-icon">А</span><div>Автопротокол<small>DATABASE EXPLORER</small></div></div>
+      <div class="connection"><span class="dot"></span> PostgreSQL <span class="local">LOCAL</span></div>
+      <p class="nav-label">ТАБЛИЦЫ ПРИЛОЖЕНИЯ</p>
+      <nav id="tables" aria-label="Таблицы базы данных"></nav>
+      <div class="sidebar-bottom"><p>Данные остаются<br>на этом компьютере.</p><a href="/docs" target="_blank" rel="noopener">Документация API ↗</a></div>
+    </aside>
+    <main>
+      <header><span>Рабочее пространство <span class="slash">/</span> База данных</span><div><span id="account"></span><button id="logout" type="button">Выйти</button></div></header>
+      <section class="content">
+        <div class="heading"><div><p class="eyebrow">ОБЗОР ДАННЫХ</p><h1 id="title">Совещания</h1><p id="subtitle" class="muted"></p></div><span class="readonly">◉ Только чтение</span></div>
+        <div id="stats" class="stats"></div>
+        <section class="data-panel">
+          <form id="filters" class="toolbar">
+            <label class="search"><span class="sr-only">Поиск по таблице</span><input id="search" type="search" maxlength="200" placeholder="Поиск по всем открытым полям…"></label>
+            <label id="meeting-filter"><span class="sr-only">ID совещания</span><input id="meeting-id" type="number" min="1" placeholder="ID встречи"></label>
+            <button type="submit" class="primary">Найти</button><button id="refresh" type="button">Обновить</button>
+          </form>
+          <p id="error" class="error panel-message" role="alert" hidden></p>
+          <div class="table-scroll" tabindex="0" aria-label="Записи таблицы"><table><thead id="columns"></thead><tbody id="records"></tbody></table></div>
+          <p id="empty" class="empty" hidden>Здесь пока нет записей</p>
+          <footer><span id="page-info" aria-live="polite"></span><div><button id="previous" type="button" aria-label="Предыдущая страница">← Назад</button><button id="next" type="button" aria-label="Следующая страница">Далее →</button></div></footer>
+        </section>
+        <p class="footnote">Выберите «Открыть», чтобы прочитать запись целиком. Пароли, голосовые векторы и служебные пути скрыты.</p>
+      </section>
+    </main>
+  </div>
+  <dialog id="detail"><div class="dialog-heading"><h2 id="detail-title">Запись</h2><button id="close-detail" type="button">Закрыть ✕</button></div><dl id="detail-fields"></dl></dialog>
+</body>
+</html>
