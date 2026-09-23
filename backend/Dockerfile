@@ -8,7 +8,7 @@ ENV UV_COMPILE_BYTECODE=1 \
     PYTHONUNBUFFERED=1
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ffmpeg libreoffice \
+    && apt-get install -y --no-install-recommends ffmpeg libreoffice fonts-dejavu-core fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
