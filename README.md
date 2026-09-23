@@ -72,6 +72,8 @@
                  └──────────────┘
 ```
 
+Схема API для фронта: `GET /openapi.json` на запущенном бэке.
+
 Поток данных: запись → `data/audio/<id>/audio.wav` (ffmpeg, 16 kHz mono) → Celery `process_meeting` → `pipeline.process()` возвращает `MeetingResult` (контракт в `pipeline/pipeline/models.py`) → сегменты, карта спикеров, поручения-черновики и саммари в БД → секретарь правит спикеров и поручения → «Подтвердить протокол» → уведомления ответственным, экспорт DOCX / PDF, отправка в СЭД → beat следит за сроками.
 
 Границы модулей:
@@ -105,7 +107,7 @@ docker compose up -d --build
 Дальше:
 
 - API и Swagger: http://localhost:8000/docs
-- Фронтенд: http://localhost:3000 → `/ru/meetings` (см. `frontend/README.md`)
+- Фронтенд: см. `frontend/README.md` (отдельное Next.js-приложение, ходит в этот API)
 - Учётная запись: `admin@example.com` / `admin123`
 
 По умолчанию `PIPELINE_FAKE=1`: обработка мгновенная, результат детерминированный, ML-модели не нужны. Для реального распознавания:
@@ -276,7 +278,6 @@ cd backend && uv run pytest           # API, Celery-задачи, напомин
 cd backend && uv run ruff check . && uv run ruff format --check .
 cd backend && uv run python scripts/smoke_backend.py   # end-to-end через реальный HTTP и curl
 cd bots && uv run pytest              # контракт CLI и жизненный цикл бота
-cd frontend && pnpm typecheck && pnpm lint && pnpm build
 ```
 
 Тесты бэкенда используют `PIPELINE_FAKE=1` и `CELERY_EAGER=1`: пайплайн подменяется детерминированной заглушкой, Celery-задачи выполняются в процессе без Redis.
@@ -290,14 +291,14 @@ cd frontend && pnpm typecheck && pnpm lint && pnpm build
 | Бэкенд: auth, участники, совещания (файл / live / бот), поручения, уведомления, напоминания, экспорт DOCX / PDF, СЭД-mock | готово, покрыто тестами и end-to-end smoke |
 | Контракт пайплайна и `PIPELINE_FAKE` | готово; бэкенд и фронт работают на детерминированной заглушке |
 | Реальный пайплайн (`pipeline/real.py`: whisper, pyannote, voiceprint, LLM-агент, саммари, privacy) | в работе; до его появления `pipeline.cli` без `PIPELINE_FAKE=1` завершается `NotImplementedError` |
-| Фронтенд | каркас, i18n, типизированный API-клиент и логин готовы; экраны совещаний, дашборда и участников в работе |
+| Фронтенд | отдельное Next.js-приложение, в работе |
 | Бот Meet / Zoom / Teams | жизненный цикл, запись, загрузка и CLI-контракт готовы; адаптеры селекторов web-клиентов в работе |
 | Docker Compose | описан и собирается; на машине разработки проверялся локальный запуск без Docker |
 
 ## Структура репозитория
 
 ```
-frontend/      Next.js-приложение (владелец: Эмир)
+frontend/      Next.js-приложение, полностью делает Эмир (свой каркас, типы и Dockerfile)
 backend/       FastAPI, Celery, Alembic, экспорт, СЭД-адаптер (владелец: Никита)
   app/routers/     auth, participants, directions, meetings, tasks, notifications, exports
   app/services/    audio, access, speakers, notify, export, sed/
